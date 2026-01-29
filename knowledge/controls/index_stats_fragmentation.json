@@ -4,7 +4,18 @@
   "title": "Index Fragmentation Analysis / İndeks Parçalanma Analizi",
   "description": "Analyzes index fragmentation and structure metrics",
   "intent": "performance",
-  "keywords": ["index", "indeks", "fragmentation", "parçalanma", "stats", "performance"],
+  "keywords": {
+    "en": [
+      "index",
+      "indeks",
+      "fragmentation",
+      "stats",
+      "performance"
+    ],
+    "tr": [
+      "parçalanma"
+    ]
+  },
   "queries": [
     {
       "query_id": "index_fragmentation",
@@ -12,7 +23,38 @@
       "binds": [],
       "row_limit": 50,
       "timeout_seconds": 30,
-      "result_schema": ["OWNER", "INDEX_NAME", "TABLE_NAME", "NUM_ROWS", "BLEVEL", "LEAF_BLOCKS"]
+      "result_schema": [
+        {
+          "name": "OWNER",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "INDEX_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TABLE_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "NUM_ROWS",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "BLEVEL",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "LEAF_BLOCKS",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows index metrics. High BLEVEL (> 4) indicates deep index trees. Fragmentation degrades performance and rebuilding may help.",

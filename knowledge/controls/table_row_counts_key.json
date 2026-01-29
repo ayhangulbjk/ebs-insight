@@ -4,7 +4,19 @@
   "title": "Key Table Row Counts / Ana Tablo Satır Sayıları",
   "description": "Shows row counts for key EBS operational tables",
   "intent": "data_integrity",
-  "keywords": ["tablo", "table", "satır", "row", "sayı", "count", "data"],
+  "keywords": {
+    "en": [
+      "tablo",
+      "table",
+      "row",
+      "count",
+      "data"
+    ],
+    "tr": [
+      "satır",
+      "sayı"
+    ]
+  },
   "queries": [
     {
       "query_id": "key_table_sizes",
@@ -12,7 +24,28 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["OWNER", "TABLE_NAME", "NUM_ROWS", "LAST_ANALYZED"]
+      "result_schema": [
+        {
+          "name": "OWNER",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TABLE_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "NUM_ROWS",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "LAST_ANALYZED",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows row counts for key EBS operational tables. Compare with prior snapshots to detect anomalies. Stale statistics indicate need for GATHER_TABLE_STATS.",

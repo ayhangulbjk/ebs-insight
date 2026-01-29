@@ -3,8 +3,22 @@
   "version": "1.0.0",
   "title": "Lock Analysis / Kilit Analizi",
   "description": "Identifies lock holders and waiters, showing which sessions are blocking others",
-  "intent": "locks",
-  "keywords": ["kilit", "lock", "blocker", "engelleme", "wait", "bekleme", "deadlock", "kilitlenme"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "kilit",
+      "lock",
+      "blocker",
+      "engelleme",
+      "wait",
+      "bekleme",
+      "deadlock",
+      "kilitlenme"
+    ],
+    "tr": [
+      "kilitlenme"
+    ]
+  },
   "queries": [
     {
       "query_id": "lock_holders_waiters",
@@ -12,7 +26,53 @@
       "binds": [],
       "row_limit": 500,
       "timeout_seconds": 30,
-      "result_schema": ["SID", "ID1", "ID2", "TYPE", "MODE_HELD", "MODE_REQUESTED", "USERNAME", "MACHINE", "STATUS"]
+      "result_schema": [
+        {
+          "name": "SID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "ID1",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "ID2",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TYPE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "MODE_HELD",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "MODE_REQUESTED",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "USERNAME",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "MACHINE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Identifies lock holders and waiters. Look for SIDs that are blocking others (lmode > 0) and SIDs that are waiting (request > 0). Cross-reference with active sessions.",

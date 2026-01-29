@@ -3,8 +3,22 @@
   "version": "1.0.0",
   "title": "Locked Objects / Kilitli Nesneler",
   "description": "Shows which database objects are locked by which sessions",
-  "intent": "locks",
-  "keywords": ["nesne", "object", "table", "index", "kilit", "lock", "table", "tablo"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "nesne",
+      "object",
+      "table",
+      "index",
+      "kilit",
+      "lock",
+      "table",
+      "tablo"
+    ],
+    "tr": [
+      "tablo"
+    ]
+  },
   "queries": [
     {
       "query_id": "locked_objects",
@@ -12,7 +26,48 @@
       "binds": [],
       "row_limit": 500,
       "timeout_seconds": 30,
-      "result_schema": ["SESSION_ID", "LOCKED_MODE", "ORACLE_USERNAME", "OS_USER_NAME", "OWNER", "OBJECT_TYPE", "OBJECT_NAME", "OBJECT_ID"]
+      "result_schema": [
+        {
+          "name": "SESSION_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "LOCKED_MODE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "ORACLE_USERNAME",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "OS_USER_NAME",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "OWNER",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "OBJECT_TYPE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "OBJECT_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "OBJECT_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows which database objects are locked by which sessions. Correlate with active sessions to identify problematic connections.",

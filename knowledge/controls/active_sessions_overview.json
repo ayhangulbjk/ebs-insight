@@ -3,8 +3,27 @@
   "version": "1.0.0",
   "title": "Active Sessions Overview / Aktif Oturumlar Özeti",
   "description": "Lists all active user sessions connected to EBS database with connection details",
-  "intent": "session_analysis",
-  "keywords": ["oturum", "session", "user", "bağlı", "connected", "active", "kullanıcı"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "session",
+      "active session",
+      "user session",
+      "connected user",
+      "session status",
+      "active connection",
+      "currently active"
+    ],
+    "tr": [
+      "oturum",
+      "aktif oturum",
+      "kullanıcı oturumu",
+      "bağlı kullanıcı",
+      "oturum durumu",
+      "aktif bağlantı",
+      "şu an aktif"
+    ]
+  },
   "queries": [
     {
       "query_id": "active_sessions_detail",
@@ -12,7 +31,48 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["SID", "SERIAL#", "USERNAME", "OSUSER", "MACHINE", "LOGON_TIME", "STATUS", "STMT_COUNT"]
+      "result_schema": [
+        {
+          "name": "SID",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "SERIAL#",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "USERNAME",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "OSUSER",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "MACHINE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "LOGON_TIME",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STMT_COUNT",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Lists all active user sessions connected to EBS database. Check for long-running sessions, ghost connections, and resource consumption.",

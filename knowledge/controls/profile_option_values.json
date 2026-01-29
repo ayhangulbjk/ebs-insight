@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "title": "Critical Profile Options / Kritik Profil Seçenekleri",
   "description": "Shows critical EBS profile option settings",
-  "intent": "parameters",
-  "keywords": ["profile", "option", "profil", "seçenek", "ayar", "setting"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "profile",
+      "option",
+      "profil",
+      "ayar",
+      "setting"
+    ],
+    "tr": [
+      "seçenek"
+    ]
+  },
   "queries": [
     {
       "query_id": "profile_options",
@@ -12,7 +23,23 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["PROFILE_OPTION_NAME", "PROFILE_OPTION_VALUE", "LEVEL_ID"]
+      "result_schema": [
+        {
+          "name": "PROFILE_OPTION_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PROFILE_OPTION_VALUE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "LEVEL_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows critical EBS profile option settings. These control system behavior, concurrent processing, and data visibility rules.",

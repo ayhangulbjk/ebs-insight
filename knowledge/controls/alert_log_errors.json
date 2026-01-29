@@ -3,8 +3,20 @@
   "version": "1.0.0",
   "title": "Alert Log Errors (24h) / Uyarı Günlüğü Hataları (24s)",
   "description": "Shows alert log errors and warnings from the last 24 hours",
-  "intent": "database_health",
-  "keywords": ["uyarı", "alert", "hata", "error", "günlük", "log", "warning"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "alert",
+      "hata",
+      "error",
+      "log",
+      "warning"
+    ],
+    "tr": [
+      "uyarı",
+      "günlük"
+    ]
+  },
   "queries": [
     {
       "query_id": "alert_log_recent",
@@ -12,7 +24,23 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["ORIGINATING_TIMESTAMP", "SEVERITY", "MESSAGE_TEXT"]
+      "result_schema": [
+        {
+          "name": "ORIGINATING_TIMESTAMP",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "SEVERITY",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "MESSAGE_TEXT",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows alert log entries in last 24 hours. Critical/error entries require investigation. May indicate I/O, memory, or recovery issues.",

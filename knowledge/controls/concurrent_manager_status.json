@@ -4,7 +4,20 @@
   "title": "Concurrent Manager Health / Eşzamanlı Yönetici Sağlığı",
   "description": "Displays all concurrent managers and their operational status",
   "intent": "conc_mgr",
-  "keywords": ["concurrent", "manager", "eşzamanlı", "yönetici", "sağlık", "health", "request", "process"],
+  "keywords": {
+    "en": [
+      "concurrent",
+      "manager",
+      "health",
+      "request",
+      "process"
+    ],
+    "tr": [
+      "eşzamanlı",
+      "yönetici",
+      "sağlık"
+    ]
+  },
   "queries": [
     {
       "query_id": "conc_mgr_processes",
@@ -12,7 +25,48 @@
       "binds": [],
       "row_limit": 200,
       "timeout_seconds": 30,
-      "result_schema": ["CONCURRENT_PROCESS_ID", "PROCESS_STATUS_CODE", "QUEUE_CONTROL_FLAG", "MAX_PROCESSES", "CURRENT_PROCESSES", "PROCESS_NAME", "OS_PROCESS_ID", "SPID"]
+      "result_schema": [
+        {
+          "name": "CONCURRENT_PROCESS_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PROCESS_STATUS_CODE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "QUEUE_CONTROL_FLAG",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "MAX_PROCESSES",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "CURRENT_PROCESSES",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PROCESS_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "OS_PROCESS_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "SPID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Displays all concurrent managers and their status. A=Active, I=Inactive, E=Error, S=Stopped. Check max_processes vs current_processes for capacity.",

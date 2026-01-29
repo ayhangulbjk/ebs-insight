@@ -4,7 +4,19 @@
   "title": "Failed Concurrent Requests (24h) / Başarısız İstekler (24s)",
   "description": "Lists failed concurrent requests from the last 24 hours",
   "intent": "conc_mgr",
-  "keywords": ["başarısız", "failed", "error", "hata", "eşzamanlı", "concurrent", "request"],
+  "keywords": {
+    "en": [
+      "failed",
+      "error",
+      "hata",
+      "concurrent",
+      "request"
+    ],
+    "tr": [
+      "başarısız",
+      "eşzamanlı"
+    ]
+  },
   "queries": [
     {
       "query_id": "failed_requests_24h",
@@ -12,7 +24,43 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["REQUEST_ID", "USER_CONCURRENT_PROGRAM_NAME", "STATUS_CODE", "PHASE_CODE", "REQUEST_DATE", "USER_NAME", "COMPLETION_DATE"]
+      "result_schema": [
+        {
+          "name": "REQUEST_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "USER_CONCURRENT_PROGRAM_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS_CODE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PHASE_CODE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "REQUEST_DATE",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "USER_NAME",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "COMPLETION_DATE",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows failed concurrent requests in the last 24 hours. Use REQUEST_ID to query FND_CONCURRENT_REQUESTS.LOGFILE_NAME for error details.",

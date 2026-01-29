@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "title": "Redo Log Status / Tekrar Günlüğü Durumu",
   "description": "Displays redo log groups and their operational status",
-  "intent": "storage",
-  "keywords": ["redo", "tekrar", "log", "günlük", "switch", "archive"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "redo",
+      "tekrar",
+      "log",
+      "switch",
+      "archive"
+    ],
+    "tr": [
+      "günlük"
+    ]
+  },
   "queries": [
     {
       "query_id": "redo_log_groups",
@@ -12,7 +23,28 @@
       "binds": [],
       "row_limit": 50,
       "timeout_seconds": 30,
-      "result_schema": ["GROUP#", "FILE_COUNT", "SIZE_MB", "STATUS"]
+      "result_schema": [
+        {
+          "name": "GROUP#",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "FILE_COUNT",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "SIZE_MB",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Displays redo log groups and status. ACTIVE/INACTIVE/UNUSED are normal; other statuses warrant investigation.",

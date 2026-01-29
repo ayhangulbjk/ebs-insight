@@ -4,7 +4,19 @@
   "title": "Top Wait Events / En İyi Bekleme Olayları",
   "description": "Shows top system wait events and their frequency",
   "intent": "performance",
-  "keywords": ["wait", "bekleme", "event", "olay", "performance", "performans"],
+  "keywords": {
+    "en": [
+      "wait",
+      "bekleme",
+      "event",
+      "olay",
+      "performance",
+      "performans"
+    ],
+    "tr": [
+      "performans"
+    ]
+  },
   "queries": [
     {
       "query_id": "top_wait_events",
@@ -12,7 +24,33 @@
       "binds": [],
       "row_limit": 30,
       "timeout_seconds": 30,
-      "result_schema": ["EVENT", "WAIT_CLASS", "TOTAL_WAIT_SEC", "TOTAL_WAITS", "AVG_WAIT_MS"]
+      "result_schema": [
+        {
+          "name": "EVENT",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "WAIT_CLASS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TOTAL_WAIT_SEC",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TOTAL_WAITS",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "AVG_WAIT_MS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Top system wait events. High 'log file sync' or 'db file sequential read' waits indicate I/O bottlenecks. Focus on non-idle events.",

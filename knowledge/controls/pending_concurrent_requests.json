@@ -4,7 +4,20 @@
   "title": "Pending Concurrent Requests / Beklemede Olan Eşzamanlı İstekler",
   "description": "Lists pending, inactive, and queued concurrent requests",
   "intent": "conc_mgr",
-  "keywords": ["isteği", "request", "pending", "beklemede", "eşzamanlı", "concurrent", "queue", "kuyruk"],
+  "keywords": {
+    "en": [
+      "request",
+      "pending",
+      "beklemede",
+      "concurrent",
+      "queue",
+      "kuyruk"
+    ],
+    "tr": [
+      "isteği",
+      "eşzamanlı"
+    ]
+  },
   "queries": [
     {
       "query_id": "pending_requests",
@@ -12,7 +25,53 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["REQUEST_ID", "PROGRAM_APPLICATION_ID", "CONCURRENT_PROGRAM_ID", "PHASE_CODE", "STATUS_CODE", "REQUESTED_BY_USER_ID", "REQUEST_DATE", "ACTUAL_START_DATE", "USER_CONCURRENT_PROGRAM_NAME"]
+      "result_schema": [
+        {
+          "name": "REQUEST_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PROGRAM_APPLICATION_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "CONCURRENT_PROGRAM_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PHASE_CODE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS_CODE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "REQUESTED_BY_USER_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "REQUEST_DATE",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "ACTUAL_START_DATE",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "USER_CONCURRENT_PROGRAM_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Lists pending (P), inactive (I), and queued (Q) concurrent requests. Shows age of request and requested user. Long waits indicate manager issues.",

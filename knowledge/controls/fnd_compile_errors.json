@@ -4,7 +4,20 @@
   "title": "PL/SQL Compile Errors / PL/SQL Derleme Hataları",
   "description": "Shows PL/SQL compilation errors in EBS schemas",
   "intent": "invalid_objects",
-  "keywords": ["hata", "error", "compile", "derle", "plsql", "procedure", "package"],
+  "keywords": {
+    "en": [
+      "hata",
+      "error",
+      "compile",
+      "derle",
+      "plsql",
+      "procedure",
+      "package"
+    ],
+    "tr": [
+      "package"
+    ]
+  },
   "queries": [
     {
       "query_id": "plsql_errors",
@@ -12,7 +25,38 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["OWNER", "NAME", "TYPE", "LINE", "POSITION", "TEXT"]
+      "result_schema": [
+        {
+          "name": "OWNER",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TYPE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "LINE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "POSITION",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TEXT",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows PL/SQL compilation errors in key EBS schemas. Use to identify broken packages/procedures.",

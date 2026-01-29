@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "title": "FND Users & Responsibilities / FND Kullanıcılar ve Sorumluluklar",
   "description": "Lists active EBS users and their assigned responsibilities",
-  "intent": "users",
-  "keywords": ["kullanıcı", "user", "sorumluluk", "responsibility", "fnd", "access"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "user",
+      "sorumluluk",
+      "responsibility",
+      "fnd",
+      "access"
+    ],
+    "tr": [
+      "kullanıcı"
+    ]
+  },
   "queries": [
     {
       "query_id": "active_users_responsibilities",
@@ -12,7 +23,33 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["USER_ID", "USER_NAME", "DESCRIPTION", "RESP_COUNT", "LAST_LOGIN"]
+      "result_schema": [
+        {
+          "name": "USER_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "USER_NAME",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "DESCRIPTION",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "RESP_COUNT",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "LAST_LOGIN",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Lists active EBS users and number of responsibilities assigned. High-responsibility accounts may be overprivileged.",

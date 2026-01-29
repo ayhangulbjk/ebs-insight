@@ -4,7 +4,18 @@
   "title": "Workflow Queue Status / İş Akışı Sırası Durumu",
   "description": "Shows workflow queue depths and pending item ages",
   "intent": "workflow",
-  "keywords": ["sıra", "queue", "iş akışı", "workflow", "notification", "bildirim"],
+  "keywords": {
+    "en": [
+      "queue",
+      "workflow",
+      "notification",
+      "bildirim"
+    ],
+    "tr": [
+      "sıra",
+      "iş akışı"
+    ]
+  },
   "queries": [
     {
       "query_id": "wf_queue_status",
@@ -12,7 +23,23 @@
       "binds": [],
       "row_limit": 50,
       "timeout_seconds": 30,
-      "result_schema": ["QUEUE_DEPTH", "QUEUE_TYPE", "OLDEST_DATE"]
+      "result_schema": [
+        {
+          "name": "QUEUE_DEPTH",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "QUEUE_TYPE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "OLDEST_DATE",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows workflow queue depths. High WAITING/NOTIFIED queues or old deferred items indicate workflow processing delays.",

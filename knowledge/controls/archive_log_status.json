@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "title": "Archive Log Status / Arşiv Günlüğü Durumu",
   "description": "Shows archive log destinations and their status",
-  "intent": "storage",
-  "keywords": ["archive", "arşiv", "log", "günlük", "destination", "hedef"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "archive",
+      "log",
+      "destination",
+      "hedef"
+    ],
+    "tr": [
+      "arşiv",
+      "günlük"
+    ]
+  },
   "queries": [
     {
       "query_id": "archive_destination_status",
@@ -12,7 +23,38 @@
       "binds": [],
       "row_limit": 50,
       "timeout_seconds": 30,
-      "result_schema": ["DEST_ID", "DEST_NAME", "STATUS", "DESTINATION", "ARCHIVER", "TYPE_FLAGS"]
+      "result_schema": [
+        {
+          "name": "DEST_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "DEST_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "DESTINATION",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "ARCHIVER",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TYPE_FLAGS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows archive log destinations and status. DEFERRED, QUOTA_FULL, or other non-VALID status requires investigation.",

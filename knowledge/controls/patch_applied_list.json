@@ -3,8 +3,20 @@
   "version": "1.0.0",
   "title": "Recent Patches Applied / Uygulanan Son Yamalar",
   "description": "Shows recently applied patches from patch history",
-  "intent": "patches",
-  "keywords": ["yama", "patch", "uygulanan", "applied", "history", "tarih"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "yama",
+      "patch",
+      "uygulanan",
+      "applied",
+      "history",
+      "tarih"
+    ],
+    "tr": [
+      "tarih"
+    ]
+  },
   "queries": [
     {
       "query_id": "recent_patches",
@@ -12,7 +24,28 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["BUG_NUMBER", "PATCH_NAME", "APPLIED_FLAG", "APPLY_DATE"]
+      "result_schema": [
+        {
+          "name": "BUG_NUMBER",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "PATCH_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "APPLIED_FLAG",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "APPLY_DATE",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows recently applied patches from AD_PATCH_HIST. Use to correlate with issues or understand patch management history.",

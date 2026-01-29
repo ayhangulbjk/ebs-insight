@@ -3,8 +3,20 @@
   "version": "1.0.0",
   "title": "System Privilege Audit / Sistem Ayrıcalığı Denetimi",
   "description": "Shows users with system privileges and their count",
-  "intent": "security",
-  "keywords": ["ayrıcalık", "privilege", "security", "güvenlik", "denetim", "audit", "user"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "privilege",
+      "security",
+      "denetim",
+      "audit",
+      "user"
+    ],
+    "tr": [
+      "ayrıcalık",
+      "güvenlik"
+    ]
+  },
   "queries": [
     {
       "query_id": "grantee_privileges",
@@ -12,7 +24,23 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["GRANTEE", "PRIV_COUNT", "DISTINCT_PRIV"]
+      "result_schema": [
+        {
+          "name": "GRANTEE",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "PRIV_COUNT",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "DISTINCT_PRIV",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows users with high system privilege counts. Users with more than 10-15 system privileges may be overprivileged. Cross-check with role memberships.",

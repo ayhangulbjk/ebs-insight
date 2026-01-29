@@ -3,8 +3,21 @@
   "version": "1.0.0",
   "title": "Datafile Status / Veri Dosyası Durumu",
   "description": "Shows datafile status (ONLINE, OFFLINE, RECOVER) and space utilization",
-  "intent": "storage",
-  "keywords": ["datafile", "dosya", "offline", "recovery", "restore", "durum", "status"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "datafile",
+      "dosya",
+      "offline",
+      "recovery",
+      "restore",
+      "durum",
+      "status"
+    ],
+    "tr": [
+      "status"
+    ]
+  },
   "queries": [
     {
       "query_id": "datafile_status_check",
@@ -12,7 +25,38 @@
       "binds": [],
       "row_limit": 500,
       "timeout_seconds": 30,
-      "result_schema": ["FILE#", "NAME", "STATUS", "GB", "CREATION_CHANGE#", "PCT_USED"]
+      "result_schema": [
+        {
+          "name": "FILE#",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "GB",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "CREATION_CHANGE#",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "PCT_USED",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows datafile status (ONLINE, OFFLINE, RECOVER, etc.) and space utilization. OFFLINE or RECOVER status requires investigation.",

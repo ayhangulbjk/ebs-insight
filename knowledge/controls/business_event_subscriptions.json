@@ -4,7 +4,19 @@
   "title": "Business Event Subscriptions / İş Olayı Abonelikleri",
   "description": "Shows workflow business event subscriptions and their status",
   "intent": "workflow",
-  "keywords": ["olayı", "event", "subscription", "abone", "workflow", "iş", "business"],
+  "keywords": {
+    "en": [
+      "event",
+      "subscription",
+      "abone",
+      "workflow",
+      "business"
+    ],
+    "tr": [
+      "olayı",
+      "iş"
+    ]
+  },
   "queries": [
     {
       "query_id": "event_subscriptions_status",
@@ -12,7 +24,28 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["EVENT_SUBSCRIPTION_ID", "SUBSCRIPTION_NAME", "EVENT_FILTER_DATA", "STATUS"]
+      "result_schema": [
+        {
+          "name": "EVENT_SUBSCRIPTION_ID",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "SUBSCRIPTION_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "EVENT_FILTER_DATA",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows workflow business event subscriptions and their status. Disabled subscriptions (status='D') should be investigated.",

@@ -3,8 +3,20 @@
   "version": "1.0.0",
   "title": "Critical DB Parameters / Kritik Veritabanı Parametreleri",
   "description": "Shows critical database parameters and their current values",
-  "intent": "parameters",
-  "keywords": ["parametre", "parameter", "init", "configuration", "ayar", "setting"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "parametre",
+      "parameter",
+      "init",
+      "configuration",
+      "ayar",
+      "setting"
+    ],
+    "tr": [
+      "setting"
+    ]
+  },
   "queries": [
     {
       "query_id": "critical_parameters",
@@ -12,7 +24,28 @@
       "binds": [],
       "row_limit": 50,
       "timeout_seconds": 30,
-      "result_schema": ["NAME", "VALUE", "TYPE", "ISDEFAULT"]
+      "result_schema": [
+        {
+          "name": "NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "VALUE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "TYPE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "ISDEFAULT",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows critical database parameters and whether they differ from defaults. Use to verify configuration against EBS best practices.",

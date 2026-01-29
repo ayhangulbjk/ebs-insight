@@ -3,8 +3,21 @@
   "version": "1.0.0",
   "title": "Tablespace Usage / Tablo Alanı Kullanımı",
   "description": "Shows tablespace usage percentages and free space",
-  "intent": "storage",
-  "keywords": ["tablo alanı", "tablespace", "kullanım", "usage", "dolu", "full", "alan", "space"],
+  "intent": "performance",
+  "keywords": {
+    "en": [
+      "tablespace",
+      "usage",
+      "dolu",
+      "full",
+      "alan",
+      "space"
+    ],
+    "tr": [
+      "tablo alanı",
+      "kullanım"
+    ]
+  },
   "queries": [
     {
       "query_id": "tablespace_summary",
@@ -12,7 +25,33 @@
       "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
-      "result_schema": ["TABLESPACE_NAME", "STATUS", "FREE_GB", "TOTAL_GB", "PCT_USED"]
+      "result_schema": [
+        {
+          "name": "TABLESPACE_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "FREE_GB",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "TOTAL_GB",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "PCT_USED",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
     }
   ],
   "doc_hint": "Shows tablespace usage percentages. Values > 85% warrant attention. Check for growth and archival opportunities.",
