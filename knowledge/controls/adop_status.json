@@ -53,34 +53,7 @@
       "query_id": "adop_sessions_summary",
       "timeout_seconds": 30,
       "row_limit": 20,
-      "sql": "SELECT node_name,
-             node_type,
-             NVL(DECODE(prepare_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', prepare_status), 'N/A') AS prepare,
-             NVL(DECODE(apply_status , 'Y', 'Done', 'N', 'Not done', 'P', 'Partial', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', apply_status), 'N/A') AS apply,
-             NVL(DECODE(finalize_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', finalize_status), 'N/A') AS finalize,
-             NVL(CASE cutover_status
-                     WHEN 'Y' THEN 'Done'
-                     WHEN 'N' THEN 'Not done'
-                     WHEN 'X' THEN 'N/A'
-                     WHEN '0' THEN 'Started'
-                     WHEN '1' THEN 'Force shutdown done'
-                     WHEN '3' THEN 'DB cutover done'
-                     WHEN '4' THEN 'FS cutover done'
-                     WHEN '6' THEN 'Force startup done'
-                     ELSE cutover_status
-                 END, 'N/A') AS cutover,
-             NVL(DECODE(cleanup_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', cleanup_status), 'N/A') AS cleanup,
-             NVL(DECODE(abort_status , 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', abort_status) , 'N/A') AS
-      abort,
-             NVL(DECODE(status , 'C', 'Completed', 'R', 'Running', 'F', 'Failed', status) , 'N/A') AS overall_status
-      FROM apps.ad_adop_sessions
-      WHERE adop_session_id =
-          (SELECT MAX(adop_session_id)
-           FROM apps.ad_adop_sessions
-           WHERE node_type = 'master'
-             AND prepare_status <> 'X' )
-        ORDER  BY node_type,
-                  node_name asc",
+      "sql": "SELECT node_name, node_type, NVL(DECODE(prepare_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', prepare_status), 'N/A') AS prepare, NVL(DECODE(apply_status, 'Y', 'Done', 'N', 'Not done', 'P', 'Partial', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', apply_status), 'N/A') AS apply, NVL(DECODE(finalize_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', finalize_status), 'N/A') AS finalize, NVL(CASE cutover_status WHEN 'Y' THEN 'Done' WHEN 'N' THEN 'Not done' WHEN 'X' THEN 'N/A' WHEN '0' THEN 'Started' WHEN '1' THEN 'Force shutdown done' WHEN '3' THEN 'DB cutover done' WHEN '4' THEN 'FS cutover done' WHEN '6' THEN 'Force startup done' ELSE cutover_status END, 'N/A') AS cutover, NVL(DECODE(cleanup_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', cleanup_status), 'N/A') AS cleanup, NVL(DECODE(abort_status, 'Y', 'Done', 'N', 'Not done', 'X', 'N/A', 'R', 'Running', 'F', 'Failed', abort_status), 'N/A') AS abort, NVL(DECODE(status, 'C', 'Completed', 'R', 'Running', 'F', 'Failed', status), 'N/A') AS overall_status FROM apps.ad_adop_sessions WHERE adop_session_id = (SELECT MAX(adop_session_id) FROM apps.ad_adop_sessions WHERE node_type = 'master' AND prepare_status <> 'X') ORDER BY node_type, node_name asc",
       "binds": [],
       "result_schema": [
         {
