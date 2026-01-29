@@ -1,0 +1,123 @@
+{
+  "control_id": "invalid_objects",
+  "version": "1.0",
+  "title": "Invalid Objects Detection",
+  "description": "Scans for invalid PL/SQL objects in the database. Helps identify compilation errors, broken references, or corrupted objects that need recompilation.",
+  "intent": "invalid_objects",
+  "safety_classification": "SAFE_READONLY",
+  "keywords": {
+    "en": [
+      "invalid object",
+      "invalid objects",
+      "invalid obj",
+      "invalid package",
+      "invalid procedure",
+      "invalid function",
+      "invalid trigger",
+      "compile error",
+      "compilation error",
+      "invalid status",
+      "broken object",
+      "corrupt object",
+      "object status",
+      "invalid plsql",
+      "pl/sql error",
+      "database object",
+      "missing dependency",
+      "dependency error"
+    ],
+    "tr": [
+      "geçersiz nesne",
+      "geçersiz nesneler",
+      "geçersiz obj",
+      "geçersiz paket",
+      "geçersiz prosedür",
+      "geçersiz fonksiyon",
+      "geçersiz tetikleyici",
+      "derleme hatası",
+      "compilation error",
+      "geçersiz durum",
+      "bozuk nesne",
+      "nesne durumu",
+      "geçersiz plsql",
+      "pl/sql hatası",
+      "veritabanı nesnesi",
+      "eksik bağımlılık",
+      "bağımlılık hatası",
+      "invalid",
+      "nesne",
+      "hata"
+    ]
+  },
+  "queries": [
+    {
+      "query_id": "invalid_objects_count",
+      "timeout_seconds": 30,
+      "row_limit": 1,
+      "sql": "SELECT COUNT(*) as invalid_object_count FROM dba_objects WHERE status = 'INVALID'",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "invalid_object_count",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "query_id": "invalid_objects_detail",
+      "timeout_seconds": 30,
+      "row_limit": 50,
+      "sql": "SELECT owner, object_name, object_type, created, last_ddl_time FROM dba_objects WHERE status = 'INVALID' ORDER BY owner, object_name",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "owner",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "object_name",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "object_type",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "created",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "last_ddl_time",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "query_id": "invalid_by_type",
+      "timeout_seconds": 30,
+      "row_limit": 20,
+      "sql": "SELECT object_type, COUNT(*) as invalid_count FROM dba_objects WHERE status = 'INVALID' GROUP BY object_type ORDER BY invalid_count DESC",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "object_type",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "invalid_count",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
+    }
+  ],
+  "doc_hint": "Look for: Invalid objects count (should be 0 ideally), object types with most invalids (Package, Procedure, Function), creation/modification dates. Alert on: >0 invalid objects (especially APPS schema), frequent recent changes causing invalidity, key objects (APPS packages) invalid.",
+  "analysis_prompt": "Analyze invalid database objects in EBS. Summarize: 1) Total count of invalid objects, 2) Breakdown by object type, 3) Most common invalid objects (focus on APPS schema), 4) Recommendations (recompile, investigate dependencies). Status: OK (0 objects) / WARN (1-10) / CRIT (>10)."
+}

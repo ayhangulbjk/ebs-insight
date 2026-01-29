@@ -1,0 +1,3 @@
+"""
+Ollama LLM integration layer
+"""

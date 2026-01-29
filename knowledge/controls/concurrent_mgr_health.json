@@ -1,0 +1,128 @@
+{
+  "control_id": "concurrent_mgr_health",
+  "version": "1.2",
+  "title": "Concurrent Manager Health Check",
+  "description": "Monitors the health status of all concurrent managers. Checks if managers are running, queue status, and detects any disabled or stuck managers.",
+  "intent": "conc_mgr",
+  "safety_classification": "SAFE_READONLY",
+  "keywords": {
+    "en": [
+      "concurrent manager",
+      "concurrent managers",
+      "cm",
+      "cm health",
+      "manager health",
+      "manager status",
+      "queue status",
+      "queue size",
+      "manager running",
+      "manager disabled",
+      "manager stuck",
+      "scheduler status",
+      "fnd concurrent",
+      "output post",
+      "queue control",
+      "request queue",
+      "parallel concurrent"
+    ],
+    "tr": [
+      "concurrent manager",
+      "concurrent yöneticisi",
+      "cm",
+      "cm sağlığı",
+      "yönetici sağlığı",
+      "yönetici durumu",
+      "kuyruk durumu",
+      "kuyruk boyutu",
+      "yönetici çalışıyor",
+      "yönetici devre dışı",
+      "yönetici takılı",
+      "scheduler durumu",
+      "zamanlamacı",
+      "eş zamanlı işlemler",
+      "işlem kuyruğu",
+      "kuyruk kontrolü",
+      "paralel işlem",
+      "cm durumu",
+      "yönetici",
+      "manager"
+    ]
+  },
+  "queries": [
+    {
+      "query_id": "manager_status_summary",
+      "timeout_seconds": 30,
+      "row_limit": 100,
+      "sql": "SELECT fcpm.concurrent_process_id, fcpm.process_name, DECODE(fcpm.process_status_code, 'A', 'Active', 'I', 'Inactive', 'D', 'Deactivated', 'E', 'Error', fcpm.process_status_code) as status, fcpm.queue_size, fcpm.running_processes, fcpm.max_processes, DECODE(fcpm.logfile_flag, 'Y', 'Enabled', 'N', 'Disabled') as logfile FROM apps.fnd_concurrent_processes fcpm WHERE fcpm.process_name NOT IN ('Queue Minder', 'ICM') ORDER BY fcpm.process_name",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "concurrent_process_id",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "process_name",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "queue_size",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "running_processes",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "max_processes",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "logfile",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "query_id": "queue_backlog",
+      "timeout_seconds": 30,
+      "row_limit": 50,
+      "sql": "SELECT fcpm.process_name, COUNT(fcr.request_id) as pending_requests, MIN(fcr.request_date) as oldest_request_date, MAX(fcr.completion_date) as last_completed FROM apps.fnd_concurrent_processes fcpm LEFT JOIN apps.fnd_concurrent_requests fcr ON fcpm.concurrent_process_id = fcr.concurrent_process_id AND fcr.phase_code = 'P' WHERE fcpm.process_name NOT IN ('Queue Minder', 'ICM') GROUP BY fcpm.process_name ORDER BY pending_requests DESC",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "process_name",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "pending_requests",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "oldest_request_date",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "last_completed",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
+    }
+  ],
+  "doc_hint": "Look for: All managers with status 'Active' (normal), Queue sizes (should be manageable), Running processes (should be < max), Disabled managers (red flag). Alert on: Deactivated managers, queue buildup (>100), running = max (saturation), error states.",
+  "analysis_prompt": "Analyze concurrent manager health in Oracle EBS R12.2. Summarize: 1) Overall manager health (count active/inactive/error), 2) Queue status and any backlogs, 3) Process saturation (running vs max), 4) Recommended actions. Format as health verdict (OK/WARN/CRIT) with evidence."
+}

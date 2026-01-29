@@ -1,0 +1,123 @@
+{
+  "control_id": "adop_status",
+  "version": "1.1",
+  "title": "ADOP Patch Application Status",
+  "description": "Monitors the status of ADOP (AutoPatch) sessions and patch application progress. Helps track ongoing patches and identify stuck or failed patching operations.",
+  "intent": "adop",
+  "safety_classification": "SAFE_READONLY",
+  "keywords": {
+    "en": [
+      "adop",
+      "adop status",
+      "autopatch",
+      "patch",
+      "patch status",
+      "patch application",
+      "patch session",
+      "apply patch",
+      "deployment",
+      "adop progress",
+      "adop session",
+      "patch cycle",
+      "adop running",
+      "adop pending",
+      "ad session",
+      "patching status",
+      "maintenance",
+      "patch management"
+    ],
+    "tr": [
+      "adop",
+      "adop durumu",
+      "autopatch",
+      "yama",
+      "yama durumu",
+      "yama uygulaması",
+      "yama oturumu",
+      "yama uygulanıyor",
+      "dağıtım",
+      "adop ilerleme",
+      "adop oturumu",
+      "yama döngüsü",
+      "adop çalışıyor",
+      "adop beklemede",
+      "yamalar",
+      "yama yönetimi",
+      "bakım",
+      "patch",
+      "uygulama"
+    ]
+  },
+  "queries": [
+    {
+      "query_id": "adop_sessions_summary",
+      "timeout_seconds": 30,
+      "row_limit": 20,
+      "sql": "SELECT ads.adop_session_id, ads.session_status, COUNT(DISTINCT adc.adop_cycle_id) as active_cycles, MIN(ads.start_timestamp) as earliest_session, MAX(ads.last_update_timestamp) as last_update FROM ad_adop_sessions ads LEFT JOIN ad_adop_cycles adc ON ads.adop_session_id = adc.adop_session_id WHERE ads.session_status IN ('RUNNING', 'PENDING', 'COMPLETED', 'ERROR', 'FAILED') GROUP BY ads.adop_session_id, ads.session_status ORDER BY ads.start_timestamp DESC",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "adop_session_id",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "session_status",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "active_cycles",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "earliest_session",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "last_update",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "query_id": "adop_cycle_details",
+      "timeout_seconds": 30,
+      "row_limit": 30,
+      "sql": "SELECT adc.adop_cycle_id, adc.cycle_status, COUNT(adp.patch_id) as total_patches, SUM(CASE WHEN adp.patch_status = 'APPLIED' THEN 1 ELSE 0 END) as applied_patches, SUM(CASE WHEN adp.patch_status = 'FAILED' THEN 1 ELSE 0 END) as failed_patches FROM ad_adop_cycles adc LEFT JOIN ad_adop_patches adp ON adc.adop_cycle_id = adp.adop_cycle_id WHERE adc.cycle_status IN ('RUNNING', 'PENDING', 'COMPLETED', 'ERROR', 'FAILED') GROUP BY adc.adop_cycle_id, adc.cycle_status ORDER BY adc.creation_date DESC",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "adop_cycle_id",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "cycle_status",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "total_patches",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "applied_patches",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "failed_patches",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
+    }
+  ],
+  "doc_hint": "Look for: ADOP sessions (should be 0 or 1 active), session status (RUNNING = active patching, COMPLETED = finished), cycle status, failed patches (red flag). Alert on: Multiple active sessions, FAILED status, patches with errors, sessions stuck >24 hours.",
+  "analysis_prompt": "Analyze ADOP patch application status in EBS. Summarize: 1) Active/pending ADOP sessions, 2) Patch cycles and progress (total/applied/failed), 3) Any failed patches or errors, 4) Overall health and recommended next steps. Status: OK (no active/completed recent) / WARN (active sessions) / CRIT (failed patches)."
+}

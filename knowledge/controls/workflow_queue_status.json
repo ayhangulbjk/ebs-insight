@@ -1,0 +1,138 @@
+{
+  "control_id": "workflow_queue_status",
+  "version": "1.0",
+  "title": "Workflow Queue Status",
+  "description": "Monitors workflow process queue status. Tracks pending processes, stuck workflows, and process engine health to identify bottlenecks or failed processes.",
+  "intent": "workflow",
+  "safety_classification": "SAFE_READONLY",
+  "keywords": {
+    "en": [
+      "workflow",
+      "workflow status",
+      "workflow queue",
+      "workflow process",
+      "wf",
+      "wf process",
+      "workflow pending",
+      "workflow error",
+      "workflow stuck",
+      "process queue",
+      "process status",
+      "queue status",
+      "pending process",
+      "failed process",
+      "workflow engine",
+      "notification queue",
+      "process priority",
+      "queue backlog"
+    ],
+    "tr": [
+      "workflow",
+      "iş akışı",
+      "workflow durumu",
+      "iş akışı durumu",
+      "workflow kuyruğu",
+      "workflow işlemi",
+      "wf",
+      "wf işlemi",
+      "workflow beklemede",
+      "workflow hatası",
+      "workflow takılı",
+      "işlem kuyruğu",
+      "işlem durumu",
+      "kuyruk durumu",
+      "beklemede işlem",
+      "başarısız işlem",
+      "iş akışı motoru",
+      "bildirim kuyruğu",
+      "işlem önceliği",
+      "kuyruk birikiş"
+    ]
+  },
+  "queries": [
+    {
+      "query_id": "workflow_queue_summary",
+      "timeout_seconds": 30,
+      "row_limit": 1,
+      "sql": "SELECT COUNT(*) as pending_processes, COUNT(DISTINCT process_name) as unique_processes, MIN(creation_date) as oldest_pending FROM wf_process_instances WHERE execution_status_code IN ('PENDING', 'NOTIFIED', 'RUNNING')",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "pending_processes",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "unique_processes",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "oldest_pending",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "query_id": "workflow_queue_by_process",
+      "timeout_seconds": 30,
+      "row_limit": 50,
+      "sql": "SELECT process_name, execution_status_code, COUNT(*) as process_count, MIN(creation_date) as oldest, MAX(last_update_date) as latest FROM wf_process_instances WHERE execution_status_code IN ('PENDING', 'NOTIFIED', 'RUNNING', 'ERROR') GROUP BY process_name, execution_status_code ORDER BY process_count DESC",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "process_name",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "execution_status_code",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "process_count",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "oldest",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "latest",
+          "type": "DATE",
+          "sensitive": false
+        }
+      ]
+    },
+    {
+      "query_id": "workflow_stuck_processes",
+      "timeout_seconds": 30,
+      "row_limit": 20,
+      "sql": "SELECT process_name, COUNT(*) as stuck_count, TRUNC(SYSDATE - MIN(creation_date)) as days_stuck FROM wf_process_instances WHERE execution_status_code IN ('PENDING', 'NOTIFIED') AND creation_date < SYSDATE - 1 GROUP BY process_name ORDER BY days_stuck DESC",
+      "binds": [],
+      "result_schema": [
+        {
+          "name": "process_name",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "stuck_count",
+          "type": "NUMBER",
+          "sensitive": false
+        },
+        {
+          "name": "days_stuck",
+          "type": "NUMBER",
+          "sensitive": false
+        }
+      ]
+    }
+  ],
+  "doc_hint": "Look for: Pending processes (should be low), process distribution (any concentration?), oldest pending (should be <1 hour), ERROR status (red flag), stuck processes (>1 day). Alert on: High backlog (>1000), ERROR status, stuck workflows, queue growing over time.",
+  "analysis_prompt": "Analyze workflow process queue in EBS. Summarize: 1) Total pending/notified/running processes, 2) Distribution by process type (any bottlenecks?), 3) Stuck processes (older than 1 hour), 4) Error processes, 5) Queue health assessment. Status: OK (low backlog, all current) / WARN (moderate backlog, some stuck >2h) / CRIT (high backlog, many stuck/errors)."
+}

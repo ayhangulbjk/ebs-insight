@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EBS-Insight Chat - Oracle EBS R12 Diagnostics</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>EBS-Insight</h1>
+                <p class="version">v0.1.0</p>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="session-info">
+                    <h3>Oturum</h3>
+                    <p id="session-id" class="session-id">Yeni oturum</p>
+                </div>
+
+                <div class="quick-actions">
+                    <h3>Hızlı İşlemler</h3>
+                    <button class="quick-btn" onclick="sendQuickPrompt('concurrent manager sağlık durumu nedir?')">
+                        📊 CM Health
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickPrompt('invalid objects var mı?')">
+                        ⚠️ Invalid Obj
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickPrompt('adop durumu nedir?')">
+                        🔄 ADOP Status
+                    </button>
+                    <button class="quick-btn" onclick="sendQuickPrompt('workflow kuyruğu durumu')">
+                        📋 Workflow
+                    </button>
+                </div>
+
+                <div class="about">
+                    <h3>Hakkında</h3>
+                    <p>Oracle EBS R12 diagnostics assistant. Sorularınız AI ile analiz edilerek doğru sonuçlar üretilir.</p>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="clear-btn" class="btn-secondary" onclick="clearChat()">
+                    🗑️ Sohbeti Temizle
+                </button>
+                <button id="status-btn" class="btn-secondary" onclick="checkHealth()">
+                    🔍 Durum Kontrol
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="chat-header">
+                <div class="header-left">
+                    <h2>Chat Asistanı</h2>
+                    <span id="connection-status" class="status-badge connected">● Bağlı</span>
+                </div>
+                <div class="header-right">
+                    <span id="response-time" class="response-time"></span>
+                </div>
+            </header>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messages">
+                <div class="message system">
+                    <div class="message-content">
+                        <p>👋 Hoş geldiniz! EBS-Insight Chat'ine hoş buldunuz.</p>
+                        <p>Oracle EBS R12 ile ilgili sorularınızı yazabilirsiniz. Sistem AI kullanarak sorularınızı analiz edecek ve veritabanından gerekli kontrol bilgilerini çekerek size detaylı cevaplar sunacaktır.</p>
+                        <p><strong>Örnek sorular:</strong></p>
+                        <ul>
+                            <li>"Concurrent manager'ların sağlık durumu nedir?"</li>
+                            <li>"Invalid objects bulunuyor mu?"</li>
+                            <li>"ADOP işlemi şu an ne durumda?"</li>
+                        </ul>
+                    </div>
+                    <span class="message-time">Şimdi</span>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <footer class="chat-footer">
+                <div class="input-group">
+                    <textarea 
+                        id="prompt-input" 
+                        class="prompt-input" 
+                        placeholder="Sorunuzu yazın... (Enter'a basın, Shift+Enter satır sonu için)"
+                        rows="1"
+                    ></textarea>
+                    <button id="send-btn" class="btn-send" onclick="sendMessage()" title="Gönder">
+                        ➜
+                    </button>
+                </div>
+                <div class="input-help">
+                    <span id="char-count">0 / 500</span>
+                    <span id="typing-indicator" class="typing-indicator"></span>
+                </div>
+            </footer>
+        </main>
+
+        <!-- Details Panel (collapsible) -->
+        <aside class="details-panel" id="details-panel">
+            <div class="panel-header">
+                <h3>Detaylar</h3>
+                <button class="btn-close" onclick="toggleDetailsPanel()">✕</button>
+            </div>
+            <div class="panel-content" id="details-content">
+                <p>Detay paneli burada görünecek.</p>
+            </div>
+        </aside>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
