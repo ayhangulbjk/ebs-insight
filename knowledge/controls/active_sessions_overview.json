@@ -2,80 +2,34 @@
   "control_id": "active_sessions_overview",
   "version": "1.0.0",
   "title": "Active Sessions Overview / Aktif Oturumlar Özeti",
-  "description": "Lists all active user sessions connected to EBS database with connection details",
+  "description": "Comprehensive overview of all active database sessions with connection details, wait events, and execution status",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "session",
-      "active session",
-      "user session",
-      "connected user",
-      "session status",
-      "active connection",
-      "currently active"
-    ],
-    "tr": [
-      "oturum",
-      "aktif oturum",
-      "kullanıcı oturumu",
-      "bağlı kullanıcı",
-      "oturum durumu",
-      "aktif bağlantı",
-      "şu an aktif"
-    ]
+    "en": ["session", "active session", "user session", "connected session", "session details", "current session", "session status", "session activity"],
+    "tr": ["oturum", "aktif oturum", "kullanıcı oturumu", "bağlı oturum", "oturum detayları", "şu anki oturum", "oturum durumu", "oturum aktivitesi"]
   },
   "queries": [
     {
-      "query_id": "active_sessions_detail",
-      "sql": "SELECT s.sid, s.serial#, s.username, s.osuser, s.machine, s.logon_time, s.status, COUNT(*) stmt_count FROM v$session s WHERE s.username IS NOT NULL AND s.type != 'BACKGROUND' GROUP BY s.sid, s.serial#, s.username, s.osuser, s.machine, s.logon_time, s.status ORDER BY s.logon_time DESC",
-      "binds": [],
+      "query_id": "q_sessions_overview_v1",
+      "sql": "SELECT s.SID, s.SERIAL#, s.USERNAME, s.STATUS, s.OSUSER, s.MACHINE, s.PROGRAM, s.LOGON_TIME, w.EVENT, w.WAIT_TIME FROM V$SESSION s LEFT JOIN V$SESSION_WAIT w ON s.SID = w.SID WHERE s.USERNAME IS NOT NULL ORDER BY s.LOGON_TIME DESC",
+      "binds": {},
       "row_limit": 100,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "SID",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "SERIAL#",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "USERNAME",
-          "type": "VARCHAR2",
-          "sensitive": true
-        },
-        {
-          "name": "OSUSER",
-          "type": "VARCHAR2",
-          "sensitive": true
-        },
-        {
-          "name": "MACHINE",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "LOGON_TIME",
-          "type": "DATE",
-          "sensitive": false
-        },
-        {
-          "name": "STATUS",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "STMT_COUNT",
-          "type": "NUMBER",
-          "sensitive": false
-        }
+        {"name": "SID", "type": "NUMBER", "sensitive": false},
+        {"name": "SERIAL#", "type": "NUMBER", "sensitive": false},
+        {"name": "USERNAME", "type": "VARCHAR2", "sensitive": true},
+        {"name": "STATUS", "type": "VARCHAR2", "sensitive": false},
+        {"name": "OSUSER", "type": "VARCHAR2", "sensitive": true},
+        {"name": "MACHINE", "type": "VARCHAR2", "sensitive": false},
+        {"name": "PROGRAM", "type": "VARCHAR2", "sensitive": false},
+        {"name": "LOGON_TIME", "type": "DATE", "sensitive": false},
+        {"name": "EVENT", "type": "VARCHAR2", "sensitive": false},
+        {"name": "WAIT_TIME", "type": "NUMBER", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Lists all active user sessions connected to EBS database. Check for long-running sessions, ghost connections, and resource consumption.",
-  "analysis_prompt": "Analyze the active sessions. Identify: (1) how many users connected, (2) any connections from unexpected machines, (3) sessions with many statements, (4) idle sessions that should be closed.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SENSITIVE",
+  "doc_hint": "Review active sessions by username and status. Identify long-running sessions, waiting events, and potential blocking locks. Flag any sessions in 'INACTIVE' status for extended time.",
+  "analysis_prompt": "Summarize session distribution by status and program. Identify any sessions with high wait times or unusual events. Recommend action if sessions appear stuck."
 }

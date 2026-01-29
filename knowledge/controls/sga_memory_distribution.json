@@ -2,49 +2,26 @@
   "control_id": "sga_memory_distribution",
   "version": "1.0.0",
   "title": "SGA Memory Distribution / SGA Bellek Dağılımı",
-  "description": "Shows SGA memory allocation by component",
+  "description": "Analyzes System Global Area (SGA) memory allocation and distribution across components to optimize memory usage",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "sga",
-      "memory",
-      "buffer",
-      "cache",
-      "shared pool",
-      "memory allocation",
-      "sga component"
-    ],
-    "tr": [
-      "bellek",
-      "arabellek",
-      "ön bellek",
-      "paylaşılan havuz",
-      "bellek ayırması",
-      "sga bileşeni"
-    ]
+    "en": ["SGA", "memory", "SGA memory", "buffer cache", "shared pool", "log buffer", "memory allocation", "memory distribution"],
+    "tr": ["SGA", "bellek", "SGA belleği", "buffer cache", "shared pool", "log buffer", "bellek ayırması", "bellek dağılımı"]
   },
   "queries": [
     {
-      "query_id": "sga_components",
-      "sql": "SELECT component, ROUND(SUM(current_size) / (1024*1024*1024), 2) size_gb FROM v$sga_dynamic_components WHERE current_size > 0 GROUP BY component ORDER BY size_gb DESC",
-      "binds": [],
-      "row_limit": 50,
+      "query_id": "q_sga_memory_v1",
+      "sql": "SELECT NAME, VALUE / 1048576 AS VALUE_MB FROM V$SGA WHERE NAME IN ('Database Buffers', 'Redo Buffers', 'Shared Pool', 'Large Pool')",
+      "binds": {},
+      "row_limit": 10,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "COMPONENT",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "SIZE_GB",
-          "type": "NUMBER",
-          "sensitive": false
-        }
+        {"name": "NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "VALUE_MB", "type": "NUMBER", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "SGA breakdown by component. Buffer cache should be largest. Check if shared pool is adequately sized (no aged-out packages).",
-  "analysis_prompt": "Analyze SGA allocation. Report: (1) buffer cache size, (2) shared pool size, (3) large pool allocation, (4) if large_pool needs growth for parallelism.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "Review SGA component sizes. Database Buffers should be 50-80% of SGA. Shared Pool should be 10-20%. Adjust if components seem undersized for workload.",
+  "analysis_prompt": "Report SGA component sizes in MB. Calculate percentage breakdown. Recommend adjustments if distribution seems imbalanced for typical EBS workload."
 }

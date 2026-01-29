@@ -1,66 +1,30 @@
 {
   "control_id": "fnd_user_responsibilities",
   "version": "1.0.0",
-  "title": "FND Users & Responsibilities / FND Kullanıcılar ve Sorumluluklar",
-  "description": "Lists active EBS users and their assigned responsibilities",
+  "title": "FND User Responsibilities / FND Kullanıcı Sorumlulukları",
+  "description": "Monitors user access rights and responsibilities assigned in Oracle Applications to ensure proper security and access control",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "user",
-      "responsibility",
-      "fnd",
-      "access",
-      "fnd user",
-      "user access",
-      "responsibility assignment",
-      "active user"
-    ],
-    "tr": [
-      "kullanıcı",
-      "sorumluluk",
-      "kullanıcı sorumlulu\u011fu",
-      "eri\u015fim",
-      "aktif kullanıcı",
-      "fnd kullanıcı"
-    ]
+    "en": ["user responsibility", "fnd user", "access rights", "user privilege", "user role", "responsibility", "fnd security", "user access"],
+    "tr": ["kullanıcı sorumluluğu", "fnd kullanıcı", "erişim hakları", "kullanıcı ayrıcalığı", "kullanıcı rolü", "sorumluluk", "fnd güvenliği", "kullanıcı erişimi"]
   },
   "queries": [
     {
-      "query_id": "active_users_responsibilities",
-      "sql": "SELECT fu.user_id, fu.user_name, fu.description, COUNT(DISTINCT fru.responsibility_id) resp_count, MAX(fu.last_logon_date) last_login FROM fnd_user fu LEFT JOIN fnd_user_resp_groups_direct fru ON fu.user_id = fru.user_id WHERE fu.end_date IS NULL GROUP BY fu.user_id, fu.user_name, fu.description ORDER BY fu.user_name FETCH FIRST 100 ROWS ONLY",
-      "binds": [],
+      "query_id": "q_fnd_users_resp_v1",
+      "sql": "SELECT fu.USER_ID, fu.USER_NAME, fr.RESPONSIBILITY_ID, fr.RESPONSIBILITY_NAME, fru.END_DATE FROM FND_USER fu LEFT JOIN FND_USER_RESP_GROUPS_TEMP furg ON fu.USER_ID = furg.USER_ID LEFT JOIN FND_RESPONSIBILITY fr ON furg.RESPONSIBILITY_GROUP_ID = fr.RESPONSIBILITY_ID LEFT JOIN FND_USER_RESP_GROUPS fru ON fru.USER_ID = fu.USER_ID WHERE fu.END_DATE IS NULL",
+      "binds": {},
       "row_limit": 100,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "USER_ID",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "USER_NAME",
-          "type": "VARCHAR2",
-          "sensitive": true
-        },
-        {
-          "name": "DESCRIPTION",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "RESP_COUNT",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "LAST_LOGIN",
-          "type": "DATE",
-          "sensitive": false
-        }
+        {"name": "USER_ID", "type": "NUMBER", "sensitive": false},
+        {"name": "USER_NAME", "type": "VARCHAR2", "sensitive": true},
+        {"name": "RESPONSIBILITY_ID", "type": "NUMBER", "sensitive": false},
+        {"name": "RESPONSIBILITY_NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "END_DATE", "type": "DATE", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Lists active EBS users and number of responsibilities assigned. High-responsibility accounts may be overprivileged.",
-  "analysis_prompt": "Review active users. Identify: (1) users with many responsibilities, (2) users not logging in recently, (3) critical system user counts, (4) recommend access review.",
-  "safety_classification": "SENSITIVE"
+  "safety_classification": "SENSITIVE",
+  "doc_hint": "Review active user responsibilities. Check for orphaned responsibilities or excessive privilege grants. Verify no disabled users retain active responsibilities.",
+  "analysis_prompt": "Summarize user distribution by responsibility. Identify users with excessive or unusual responsibility grants. Flag any high-privilege accounts."
 }

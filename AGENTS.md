@@ -357,6 +357,18 @@ Before proposing completion, AI MUST verify:
 
 ---
 
+### 13) DB session rule (Mandatory)
+
+All knowledge/control SQL queries MUST be non-disruptive read-only operations.
+
+**Hard enforcement:**
+- Execution layer MUST reject any DML (INSERT, UPDATE, DELETE) or DDL (CREATE, ALTER, DROP, TRUNCATE) statements
+- Parser must scan query text for suspicious tokens before execution
+
+**Violation handling:**
+- Log attempt with full context (query hash, user session, timestamp, request_id)
+- Return error to user without exposing query details
+
 ## FINAL RULE
 
 If any rule above cannot be met, the AI MUST stop and ask.

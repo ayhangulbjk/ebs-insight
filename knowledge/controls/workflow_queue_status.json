@@ -1,138 +1,27 @@
 {
   "control_id": "workflow_queue_status",
-  "version": "1.0",
-  "title": "Workflow Queue Status",
-  "description": "Monitors workflow process queue status. Tracks pending processes, stuck workflows, and process engine health to identify bottlenecks or failed processes.",
+  "version": "1.0.0",
+  "title": "Workflow Queue Status / İş Akışı Sırası Durumu",
+  "description": "Monitors the status of Oracle Workflow queue and deferred processes to ensure workflow engine is functioning properly",
   "intent": "workflow",
-  "safety_classification": "SAFE_READONLY",
   "keywords": {
-    "en": [
-      "workflow",
-      "workflow status",
-      "workflow queue",
-      "workflow process",
-      "wf",
-      "wf process",
-      "workflow pending",
-      "workflow error",
-      "workflow stuck",
-      "process queue",
-      "process status",
-      "queue status",
-      "pending process",
-      "failed process",
-      "workflow engine",
-      "notification queue",
-      "process priority",
-      "queue backlog"
-    ],
-    "tr": [
-      "workflow",
-      "iş akışı",
-      "workflow durumu",
-      "iş akışı durumu",
-      "workflow kuyruğu",
-      "workflow işlemi",
-      "wf",
-      "wf işlemi",
-      "workflow beklemede",
-      "workflow hatası",
-      "workflow takılı",
-      "işlem kuyruğu",
-      "işlem durumu",
-      "kuyruk durumu",
-      "beklemede işlem",
-      "başarısız işlem",
-      "iş akışı motoru",
-      "bildirim kuyruğu",
-      "işlem önceliği",
-      "kuyruk birikiş"
-    ]
+    "en": ["workflow", "queue", "workflow queue", "deferred process", "workflow engine", "workflow status", "queue status", "workflow stuck"],
+    "tr": ["iş akışı", "sıra", "iş akışı sırası", "ertelenmiş işlem", "iş akışı motoru", "iş akışı durumu", "sıra durumu", "iş akışı takıldı"]
   },
   "queries": [
     {
-      "query_id": "workflow_queue_summary",
+      "query_id": "q_workflow_queue_v1",
+      "sql": "SELECT COUNT(*) TOTAL_DEFERRED, COUNT(CASE WHEN DELAY < TRUNC(SYSDATE) THEN 1 END) OVERDUE_DEFERRED FROM WF_DEFERRED WHERE PHASE_CODE IN ('ERRORED', 'PENDED')",
+      "binds": {},
+      "row_limit": 10,
       "timeout_seconds": 30,
-      "row_limit": 1,
-      "sql": "SELECT COUNT(*) as pending_processes, COUNT(DISTINCT item_type) as unique_process_types, MIN(begin_date) as oldest_pending FROM wf_item_activity_statuses WHERE activity_status IN ('PENDING', 'NOTIFIED')",
-      "binds": [],
       "result_schema": [
-        {
-          "name": "pending_processes",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "unique_process_types",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "oldest_pending",
-          "type": "DATE",
-          "sensitive": false
-        }
-      ]
-    },
-    {
-      "query_id": "workflow_queue_by_process",
-      "timeout_seconds": 30,
-      "row_limit": 50,
-      "sql": "SELECT item_type, activity_status, COUNT(*) as process_count, MIN(begin_date) as oldest, MAX(end_date) as latest FROM wf_item_activity_statuses WHERE activity_status IN ('PENDING', 'NOTIFIED') GROUP BY item_type, activity_status ORDER BY process_count DESC",
-      "binds": [],
-      "result_schema": [
-        {
-          "name": "item_type",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "activity_status",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "process_count",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "oldest",
-          "type": "DATE",
-          "sensitive": false
-        },
-        {
-          "name": "latest",
-          "type": "DATE",
-          "sensitive": false
-        }
-      ]
-    },
-    {
-      "query_id": "workflow_stuck_processes",
-      "timeout_seconds": 30,
-      "row_limit": 20,
-      "sql": "SELECT item_type, COUNT(*) as stuck_count, TRUNC(SYSDATE - MIN(begin_date)) as days_pending FROM wf_item_activity_statuses WHERE activity_status IN ('PENDING', 'NOTIFIED') AND begin_date < SYSDATE - 1 GROUP BY item_type ORDER BY days_pending DESC",
-      "binds": [],
-      "result_schema": [
-        {
-          "name": "item_type",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "stuck_count",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "days_pending",
-          "type": "NUMBER",
-          "sensitive": false
-        }
+        {"name": "TOTAL_DEFERRED", "type": "NUMBER", "sensitive": false},
+        {"name": "OVERDUE_DEFERRED", "type": "NUMBER", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Look for: Pending processes (should be low), process distribution (any concentration?), oldest pending (should be <1 hour), ERROR status (red flag), stuck processes (>1 day). Alert on: High backlog (>1000), ERROR status, stuck workflows, queue growing over time.",
-  "analysis_prompt": "Analyze workflow process queue in EBS. Summarize: 1) Total pending/notified/running processes, 2) Distribution by process type (any bottlenecks?), 3) Stuck processes (older than 1 hour), 4) Error processes, 5) Queue health assessment. Status: OK (low backlog, all current) / WARN (moderate backlog, some stuck >2h) / CRIT (high backlog, many stuck/errors)."
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "Check OVERDUE_DEFERRED count. If > 0, workflow processes are stuck or delayed. Investigate WF_DEFERRED queue for errors or pending items.",
+  "analysis_prompt": "Report total deferred processes and overdue count. If overdue > 0, alert that workflow processing is delayed. Recommend workflow engine restart if needed."
 }

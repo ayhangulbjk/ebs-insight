@@ -1,54 +1,30 @@
 {
   "control_id": "table_row_counts_key",
   "version": "1.0.0",
-  "title": "Key Table Row Counts / Ana Tablo Satır Sayıları",
-  "description": "Shows row counts for key EBS operational tables",
+  "title": "Table Row Counts (Key Tables) / Tablo Satır Sayıları (Anahtar Tablolar)",
+  "description": "Monitors row counts in critical EBS tables to track data growth and identify tables requiring maintenance",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "tablo",
-      "table",
-      "row",
-      "count",
-      "data"
-    ],
-    "tr": [
-      "satır",
-      "sayı"
-    ]
+    "en": ["table", "row count", "table size", "data growth", "key table", "large table", "table statistics", "row volume"],
+    "tr": ["tablo", "satır sayısı", "tablo boyutu", "veri büyümesi", "anahtar tablo", "büyük tablo", "tablo istatistikleri", "satır hacmi"]
   },
   "queries": [
     {
-      "query_id": "key_table_sizes",
-      "sql": "SELECT owner, table_name, num_rows, last_analyzed FROM dba_tables WHERE owner IN ('GL', 'AR', 'AP', 'PO', 'ONT', 'WIP') AND table_name IN ('GL_JE_HEADERS', 'AR_PAYMENT_SCHEDULES', 'AP_INVOICES', 'AP_INVOICE_LINES', 'PO_HEADERS', 'PO_LINES') ORDER BY owner, table_name",
-      "binds": [],
-      "row_limit": 100,
+      "query_id": "q_table_row_counts_v1",
+      "sql": "SELECT OWNER, TABLE_NAME, NUM_ROWS, BLOCKS, LAST_ANALYZED FROM DBA_TABLES WHERE OWNER IN ('APPS', 'APPLSYS', 'APPSSTD') AND NUM_ROWS > 100000 ORDER BY NUM_ROWS DESC",
+      "binds": {},
+      "row_limit": 50,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "OWNER",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "TABLE_NAME",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "NUM_ROWS",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "LAST_ANALYZED",
-          "type": "DATE",
-          "sensitive": false
-        }
+        {"name": "OWNER", "type": "VARCHAR2", "sensitive": true},
+        {"name": "TABLE_NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "NUM_ROWS", "type": "NUMBER", "sensitive": false},
+        {"name": "BLOCKS", "type": "NUMBER", "sensitive": false},
+        {"name": "LAST_ANALYZED", "type": "DATE", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Shows row counts for key EBS operational tables. Compare with prior snapshots to detect anomalies. Stale statistics indicate need for GATHER_TABLE_STATS.",
-  "analysis_prompt": "Review key table sizes. Report: (1) unusually low/high row counts, (2) if statistics are recent, (3) recommend GATHER_TABLE_STATS if stale, (4) check for data integrity issues.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "Monitor large tables (NUM_ROWS > 100k) for growth trends. Check LAST_ANALYZED is recent. If > 30 days old, recommend statistics refresh. Watch for unusual growth spikes.",
+  "analysis_prompt": "Identify largest EBS tables by row count. Calculate block allocation ratio. Flag any with stale statistics or unexpected growth. Recommend maintenance if needed."
 }

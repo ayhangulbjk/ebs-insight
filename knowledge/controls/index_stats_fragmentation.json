@@ -1,70 +1,32 @@
 {
   "control_id": "index_stats_fragmentation",
   "version": "1.0.0",
-  "title": "Index Fragmentation Analysis / İndeks Parçalanma Analizi",
-  "description": "Analyzes index fragmentation and structure metrics",
+  "title": "Index Stats & Fragmentation / İndeks İstatistikleri ve Parçalanma",
+  "description": "Analyzes index fragmentation and statistics staleness to identify indexes that may need rebuilding or statistics refresh",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "index",
-      "fragmentation",
-      "stats",
-      "performance",
-      "index fragmentation",
-      "index rebuild",
-      "statistics"
-    ],
-    "tr": [
-      "indeks",
-      "parçalanma",
-      "istatistikler",
-      "performans",
-      "indeks parçalanması",
-      "indeks yeniden oluşturma"
-    ]
+    "en": ["index", "fragmentation", "index stats", "index status", "blevel", "lf_rows", "leaf_blocks", "index performance", "stale statistics"],
+    "tr": ["indeks", "parçalanma", "indeks istatistikleri", "indeks durumu", "blevel", "lf_rows", "yaprak_blokları", "indeks performansı", "eski istatistikler"]
   },
   "queries": [
     {
-      "query_id": "index_fragmentation",
-      "sql": "SELECT owner, index_name, table_name, num_rows, blevel, leaf_blocks FROM dba_indexes WHERE owner IN ('GL', 'AR', 'AP', 'PO', 'APPS') AND num_rows > 10000 ORDER BY blevel DESC FETCH FIRST 30 ROWS ONLY",
-      "binds": [],
-      "row_limit": 50,
+      "query_id": "q_index_fragmentation_v1",
+      "sql": "SELECT idx.OWNER, idx.INDEX_NAME, idx.TABLE_NAME, idx.BLEVEL, ist.LEAF_BLOCKS, ist.NUM_ROWS, ist.LAST_ANALYZED FROM DBA_INDEXES idx LEFT JOIN DBA_IND_STATISTICS ist ON idx.OWNER = ist.OWNER AND idx.INDEX_NAME = ist.INDEX_NAME WHERE idx.OWNER NOT IN ('SYS', 'SYSTEM') ORDER BY ist.LEAF_BLOCKS DESC NULLS LAST",
+      "binds": {},
+      "row_limit": 100,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "OWNER",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "INDEX_NAME",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "TABLE_NAME",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "NUM_ROWS",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "BLEVEL",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "LEAF_BLOCKS",
-          "type": "NUMBER",
-          "sensitive": false
-        }
+        {"name": "OWNER", "type": "VARCHAR2", "sensitive": true},
+        {"name": "INDEX_NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "TABLE_NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "BLEVEL", "type": "NUMBER", "sensitive": false},
+        {"name": "LEAF_BLOCKS", "type": "NUMBER", "sensitive": false},
+        {"name": "NUM_ROWS", "type": "NUMBER", "sensitive": false},
+        {"name": "LAST_ANALYZED", "type": "DATE", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Shows index metrics. High BLEVEL (> 4) indicates deep index trees. Fragmentation degrades performance and rebuilding may help.",
-  "analysis_prompt": "Analyze index structure. Report: (1) indexes with high BLEVEL, (2) large leaf_block counts, (3) recommend rebuilding for performance.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "High BLEVEL (> 3) may indicate fragmentation. Check LAST_ANALYZED for staleness. Recommend index rebuild if BLEVEL high or statistics very old.",
+  "analysis_prompt": "Identify indexes with high BLEVEL or stale statistics. List indexes exceeding fragmentation thresholds. Recommend rebuild candidates."
 }

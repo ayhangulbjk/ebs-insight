@@ -1,107 +1,33 @@
 {
   "control_id": "active_users",
-  "version": "1.1",
-  "title": "Active User Sessions",
-  "description": "Checks currently active user sessions in the EBS system. Shows count of logged-in users and session details.",
+  "version": "1.0.0",
+  "title": "Active Connected Users / Aktif Bağlı Kullanıcılar",
+  "description": "Lists all currently connected users to the EBS database with session details and activity status",
   "intent": "performance",
-  "safety_classification": "SENSITIVE",
   "keywords": {
-    "en": [
-      "active user",
-      "active users",
-      "active session",
-      "user session",
-      "logged in",
-      "connected user",
-      "user count",
-      "session count",
-      "users online",
-      "active connection",
-      "session status",
-      "icx session",
-      "currently logged",
-      "how many users",
-      "user login",
-      "concurrent users"
-    ],
-    "tr": [
-      "aktif kullanıcı",
-      "aktif kullanıcılar",
-      "aktif oturum",
-      "kullanıcı oturumu",
-      "giriş yapmış",
-      "bağlı kullanıcı",
-      "kullanıcı sayısı",
-      "oturum sayısı",
-      "çevrimiçi kullanıcılar",
-      "aktif bağlantı",
-      "oturum durumu",
-      "şu an bağlı",
-      "kaç kullanıcı",
-      "kullanıcı girişi",
-      "eşzamanlı kullanıcı",
-      "login",
-      "loggedin",
-      "aktif",
-      "oturum",
-      "session"
-    ]
+    "en": ["user", "active user", "connected user", "session", "who is connected", "current users", "online users"],
+    "tr": ["kullanıcı", "aktif kullanıcı", "bağlı kullanıcı", "oturum", "kim bağlı", "şu anki kullanıcılar", "çevrimiçi kullanıcılar"]
   },
   "queries": [
     {
-      "query_id": "active_sessions_count",
-      "timeout_seconds": 30,
+      "query_id": "q_active_users_v1",
+      "sql": "SELECT SID, SERIAL#, USERNAME, OSUSER, MACHINE, PROGRAM, LOGON_TIME, STATUS FROM V$SESSION WHERE USERNAME IS NOT NULL AND STATUS = 'ACTIVE' ORDER BY LOGON_TIME DESC",
+      "binds": {},
       "row_limit": 100,
-      "sql": "SELECT COUNT(*) as active_user_count, COUNT(DISTINCT icx.user_id) as unique_users FROM apps.icx_sessions icx WHERE icx.disabled_flag <> 'Y' AND icx.PSEUDO_FLAG = 'N' AND (icx.last_connect + DECODE(apps.FND_PROFILE.VALUE('ICX_SESSION_TIMEOUT'), NULL, icx.limit_time, 0, icx.limit_time, apps.FND_PROFILE.VALUE('ICX_SESSION_TIMEOUT') / 60) / 24) > SYSDATE AND icx.counter < icx.limit_connects AND icx.user_id > 500",
-      "binds": [],
-      "result_schema": [
-        {
-          "name": "active_user_count",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "unique_users",
-          "type": "NUMBER",
-          "sensitive": false
-        }
-      ]
-    },
-    {
-      "query_id": "active_sessions_detail",
       "timeout_seconds": 30,
-      "row_limit": 50,
-      "sql": "SELECT fu.user_name, fn.node_name, icx.creation_date as login_time, TRUNC((SYSDATE - icx.last_connect) * 24) as idle_hours, icx.limit_connects as session_limit FROM apps.fnd_user fu, apps.icx_sessions icx, apps.fnd_nodes fn WHERE fu.user_id = icx.user_id AND fn.node_id = icx.node_id AND icx.disabled_flag <> 'Y' AND icx.PSEUDO_FLAG = 'N' AND (icx.last_connect + DECODE(apps.FND_PROFILE.VALUE('ICX_SESSION_TIMEOUT'), NULL, icx.limit_time, 0, icx.limit_time, apps.FND_PROFILE.VALUE('ICX_SESSION_TIMEOUT') / 60) / 24) > SYSDATE AND icx.counter < icx.limit_connects AND icx.user_id > 500 ORDER BY icx.creation_date DESC",
-      "binds": [],
       "result_schema": [
-        {
-          "name": "user_name",
-          "type": "VARCHAR2",
-          "sensitive": true
-        },
-        {
-          "name": "node_name",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "login_time",
-          "type": "DATE",
-          "sensitive": false
-        },
-        {
-          "name": "idle_hours",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "session_limit",
-          "type": "NUMBER",
-          "sensitive": false
-        }
+        {"name": "SID", "type": "NUMBER", "sensitive": false},
+        {"name": "SERIAL#", "type": "NUMBER", "sensitive": false},
+        {"name": "USERNAME", "type": "VARCHAR2", "sensitive": true},
+        {"name": "OSUSER", "type": "VARCHAR2", "sensitive": true},
+        {"name": "MACHINE", "type": "VARCHAR2", "sensitive": false},
+        {"name": "PROGRAM", "type": "VARCHAR2", "sensitive": false},
+        {"name": "LOGON_TIME", "type": "DATE", "sensitive": false},
+        {"name": "STATUS", "type": "VARCHAR2", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Look for: Total active user count, unique users, idle time (high idle = inactive), session limits. Normal = reasonable number of active users matching business hours. Alert on: sudden spike in user count, users idle >4 hours, sessions reaching limits.",
-  "analysis_prompt": "You are analyzing active user session data in Oracle EBS R12. Summarize: 1) Total count of active users and unique user count, 2) Session distribution (idle time), 3) Any sessions approaching limits, 4) Overall assessment of user activity. Provide insights on normal vs abnormal patterns."
+  "safety_classification": "SENSITIVE",
+  "doc_hint": "Look for unexpected users, inactive sessions, or suspicious programs. High count of ACTIVE sessions may indicate load or runaway jobs.",
+  "analysis_prompt": "Analyze the active user sessions. Count by program/machine. Flag any unusual activity or unexpected connections. Recommend next steps if threshold exceeded."
 }

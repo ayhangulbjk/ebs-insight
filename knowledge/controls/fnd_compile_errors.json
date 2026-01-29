@@ -1,72 +1,30 @@
 {
   "control_id": "fnd_compile_errors",
   "version": "1.0.0",
-  "title": "PL/SQL Compile Errors / PL/SQL Derleme Hataları",
-  "description": "Shows PL/SQL compilation errors in EBS schemas",
-  "intent": "invalid_objects",
+  "title": "FND Compile Errors / FND Derleme Hataları",
+  "description": "Identifies compilation errors in Oracle Applications Foundation (FND) objects and custom packages that may prevent functionality",
+  "intent": "data_integrity",
   "keywords": {
-    "en": [
-      "error",
-      "compile",
-      "plsql",
-      "procedure",
-      "package",
-      "compilation error",
-      "compile error",
-      "syntax error"
-    ],
-    "tr": [
-      "hata",
-      "derleme",
-      "plsql",
-      "prosedür",
-      "paket",
-      "derleme hatası",
-      "sözdizimi hatası"
-    ]
+    "en": ["compile error", "fnd error", "compilation issue", "package error", "procedure error", "function error", "invalid code", "fnd object"],
+    "tr": ["derleme hatası", "fnd hatası", "derleme sorunu", "package hatası", "procedure hatası", "fonksiyon hatası", "geçersiz kod", "fnd objesi"]
   },
   "queries": [
     {
-      "query_id": "plsql_errors",
-      "sql": "SELECT owner, name, type, line, position, text FROM dba_errors WHERE owner IN ('APPLSYS', 'APPS', 'GL', 'AR', 'AP') ORDER BY owner, name, line FETCH FIRST 100 ROWS ONLY",
-      "binds": [],
+      "query_id": "q_fnd_compile_errors_v1",
+      "sql": "SELECT NAME, TYPE, LINE, POSITION, TEXT FROM ALL_ERRORS WHERE OWNER IN ('APPS', 'APPLSYS') AND ATTRIBUTE = 'ERROR' ORDER BY NAME, LINE",
+      "binds": {},
       "row_limit": 100,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "OWNER",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "NAME",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "TYPE",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "LINE",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "POSITION",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "TEXT",
-          "type": "VARCHAR2",
-          "sensitive": false
-        }
+        {"name": "NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "TYPE", "type": "VARCHAR2", "sensitive": false},
+        {"name": "LINE", "type": "NUMBER", "sensitive": false},
+        {"name": "POSITION", "type": "NUMBER", "sensitive": false},
+        {"name": "TEXT", "type": "VARCHAR2", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Shows PL/SQL compilation errors in key EBS schemas. Use to identify broken packages/procedures.",
-  "analysis_prompt": "List PL/SQL errors in EBS schemas. For each error: (1) which object is affected, (2) error message type, (3) recommend recompilation or investigation.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "Zero compilation errors is the target. If found, identify the package or procedure and investigate. May require recompilation or code review.",
+  "analysis_prompt": "Report total compilation errors found. List error types and affected objects. Recommend recompilation or code review if errors exist."
 }

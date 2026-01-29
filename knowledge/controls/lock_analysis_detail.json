@@ -1,87 +1,31 @@
 {
   "control_id": "lock_analysis_detail",
   "version": "1.0.0",
-  "title": "Lock Analysis / Kilit Analizi",
-  "description": "Identifies lock holders and waiters, showing which sessions are blocking others",
+  "title": "Lock Analysis Detail / Kilit Analizi Detay",
+  "description": "Detailed analysis of database locks including blocking locks, lock holders, and lock waiters to diagnose locking contention",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "lock",
-      "blocker",
-      "wait",
-      "deadlock",
-      "lock holder",
-      "lock waiter",
-      "blocking session",
-      "lock analysis"
-    ],
-    "tr": [
-      "kilit",
-      "engelleme",
-      "bekleme",
-      "kilitlenme",
-      "kilit analizi",
-      "engelleme durumu",
-      "bekleyen oturum"
-    ]
+    "en": ["lock", "blocking lock", "lock holder", "lock waiter", "lock type", "lock contention", "block session", "deadlock"],
+    "tr": ["kilit", "kilitleyici kilit", "kilit sahibi", "kilit bekleyici", "kilit türü", "kilit çatışması", "engelleme oturumu", "kilitlenme"]
   },
   "queries": [
     {
-      "query_id": "lock_holders_waiters",
-      "sql": "SELECT DISTINCT l.sid, l.id1, l.id2, l.type, DECODE(l.lmode, 0, 'NONE', 1, 'NULL', 2, 'RS', 3, 'RX', 4, 'S', 5, 'RSX', 6, 'X', 'UNKNOWN') mode_held, DECODE(l.request, 0, 'NONE', 1, 'NULL', 2, 'RS', 3, 'RX', 4, 'S', 5, 'RSX', 6, 'X', 'UNKNOWN') mode_requested, s.username, s.machine, s.status FROM v$lock l JOIN v$session s ON l.sid = s.sid WHERE l.lmode > 0 OR l.request > 0 ORDER BY l.id1, l.id2, l.sid",
-      "binds": [],
-      "row_limit": 500,
+      "query_id": "q_lock_analysis_v1",
+      "sql": "SELECT BLOCKING_SESSION, SID, SERIAL#, WAIT_CLASS, SECONDS_IN_WAIT, EVENT FROM V$SESSION WHERE BLOCKING_SESSION IS NOT NULL ORDER BY SECONDS_IN_WAIT DESC",
+      "binds": {},
+      "row_limit": 100,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "SID",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "ID1",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "ID2",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "TYPE",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "MODE_HELD",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "MODE_REQUESTED",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "USERNAME",
-          "type": "VARCHAR2",
-          "sensitive": true
-        },
-        {
-          "name": "MACHINE",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "STATUS",
-          "type": "VARCHAR2",
-          "sensitive": false
-        }
+        {"name": "BLOCKING_SESSION", "type": "NUMBER", "sensitive": false},
+        {"name": "SID", "type": "NUMBER", "sensitive": false},
+        {"name": "SERIAL#", "type": "NUMBER", "sensitive": false},
+        {"name": "WAIT_CLASS", "type": "VARCHAR2", "sensitive": false},
+        {"name": "SECONDS_IN_WAIT", "type": "NUMBER", "sensitive": false},
+        {"name": "EVENT", "type": "VARCHAR2", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Identifies lock holders and waiters. Look for SIDs that are blocking others (lmode > 0) and SIDs that are waiting (request > 0). Cross-reference with active sessions.",
-  "analysis_prompt": "Analyze lock holders and waiters. Identify: (1) what resources are locked, (2) which sessions are blocking others, (3) which sessions are waiting, (4) potential blockers to investigate or kill.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "Any row indicates an active lock. Identify BLOCKING_SESSION and investigate its activity. Long SECONDS_IN_WAIT indicates potential deadlock or lock escalation.",
+  "analysis_prompt": "Report any active locks with blocking sessions. Identify top lock holders. Recommend kill session if lock is prolonged or causing performance degradation."
 }

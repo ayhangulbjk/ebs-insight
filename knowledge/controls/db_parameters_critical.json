@@ -2,60 +2,28 @@
   "control_id": "db_parameters_critical",
   "version": "1.0.0",
   "title": "Critical DB Parameters / Kritik Veritabanı Parametreleri",
-  "description": "Shows critical database parameters and their current values",
+  "description": "Reviews critical Oracle database initialization parameters that affect performance, memory, and stability",
   "intent": "performance",
   "keywords": {
-    "en": [
-      "parameter",
-      "init",
-      "configuration",
-      "setting",
-      "critical parameter",
-      "db parameter",
-      "processes",
-      "memory"
-    ],
-    "tr": [
-      "parametre",
-      "başlatma",
-      "yapılandırma",
-      "ayar",
-      "kritik parametre",
-      "veritabanı parametresi"
-    ]
+    "en": ["parameter", "db parameter", "init parameter", "database parameter", "SGA", "PGA", "memory parameter", "processes", "cursor"],
+    "tr": ["parametre", "db parametresi", "başlatma parametresi", "veritabanı parametresi", "SGA", "PGA", "bellek parametresi", "işlem", "imleç"]
   },
   "queries": [
     {
-      "query_id": "critical_parameters",
-      "sql": "SELECT name, value, type, isdefault FROM v$parameter WHERE name IN ('processes', 'open_cursors', 'sga_target', 'pga_aggregate_target', 'audit_trail', 'db_recovery_file_dest', 'compatible', 'db_name', 'memory_target') ORDER BY name",
-      "binds": [],
+      "query_id": "q_critical_params_v1",
+      "sql": "SELECT NAME, VALUE, TYPE, ISDEFAULT FROM V$PARAMETER WHERE NAME IN ('processes', 'open_cursors', 'db_recovery_file_dest_size', 'memory_target', 'sga_target', 'pga_aggregate_target') ORDER BY NAME",
+      "binds": {},
       "row_limit": 50,
       "timeout_seconds": 30,
       "result_schema": [
-        {
-          "name": "NAME",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "VALUE",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "TYPE",
-          "type": "VARCHAR2",
-          "sensitive": false
-        },
-        {
-          "name": "ISDEFAULT",
-          "type": "VARCHAR2",
-          "sensitive": false
-        }
+        {"name": "NAME", "type": "VARCHAR2", "sensitive": false},
+        {"name": "VALUE", "type": "VARCHAR2", "sensitive": false},
+        {"name": "TYPE", "type": "NUMBER", "sensitive": false},
+        {"name": "ISDEFAULT", "type": "VARCHAR2", "sensitive": false}
       ]
     }
   ],
-  "doc_hint": "Shows critical database parameters and whether they differ from defaults. Use to verify configuration against EBS best practices.",
-  "analysis_prompt": "Review critical parameters. Check: (1) if processes is high enough for concurrent load, (2) if open_cursors is adequate, (3) memory allocation settings, (4) audit trail enabled.",
-  "safety_classification": "SAFE_READONLY"
+  "safety_classification": "SAFE_READONLY",
+  "doc_hint": "Verify that memory parameters (sga_target, pga_aggregate_target) are appropriate for workload size. Check processes and open_cursors limits aren't being hit.",
+  "analysis_prompt": "List current critical parameter settings. Highlight any that use default values. Recommend adjustments based on typical EBS workload patterns."
 }
