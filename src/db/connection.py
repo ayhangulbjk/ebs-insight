@@ -100,6 +100,15 @@ class DBConnectionPool:
         except Exception as e:
             raise DBConnectionError(f"Database connectivity test failed: {e}")
 
+    def verify_connectivity(self) -> bool:
+        """
+        Verify that connection pool is initialized and working.
+        
+        Returns:
+            True if pool is initialized and connectivity test passed
+        """
+        return self.pool is not None
+
     def get_connection(self, timeout: int = WAIT_TIMEOUT_SECONDS):
         """
         Acquire connection from pool.
