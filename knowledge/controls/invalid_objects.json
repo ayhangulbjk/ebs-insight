@@ -1,31 +1,75 @@
 {
   "control_id": "invalid_objects",
   "version": "1.0.0",
-  "title": "Invalid Objects / Geçersiz Objeler",
-  "description": "Identifies invalid or corrupted database objects such as procedures, functions, packages, and views that may cause runtime errors",
+  "title": "Invalid Database Objects / Geçersiz Veritabanı Objeleri",
+  "description": "Identifies and reports all invalid or corrupted database objects that may cause runtime errors or performance issues",
   "intent": "data_integrity",
   "keywords": {
-    "en": ["invalid object", "invalid procedure", "invalid function", "invalid package", "invalid view", "corrupted object", "compilation error", "invalid status"],
-    "tr": ["geçersiz obje", "geçersiz procedure", "geçersiz fonksiyon", "geçersiz package", "geçersiz view", "bozuk obje", "derlenme hatası", "geçersiz durum"]
+    "en": [
+      "invalid object",
+      "invalid procedure",
+      "invalid function",
+      "invalid package",
+      "invalid view",
+      "corrupted object",
+      "compilation error",
+      "invalid status",
+      "broken object"
+    ],
+    "tr": [
+      "geçersiz obje",
+      "geçersiz procedure",
+      "geçersiz fonksiyon",
+      "geçersiz package",
+      "geçersiz view",
+      "bozuk obje",
+      "derlenme hatası",
+      "geçersiz durum",
+      "kırık obje"
+    ]
   },
   "queries": [
     {
-      "query_id": "q_invalid_objects_v1",
+      "query_id": "invalid_objects_main",
       "sql": "SELECT OWNER, OBJECT_NAME, OBJECT_TYPE, CREATED, LAST_DDL_TIME, STATUS FROM DBA_OBJECTS WHERE STATUS = 'INVALID' AND OWNER NOT IN ('SYS', 'SYSTEM') ORDER BY CREATED DESC",
-      "binds": {},
+      "binds": [],
       "row_limit": 100,
       "timeout_seconds": 30,
       "result_schema": [
-        {"name": "OWNER", "type": "VARCHAR2", "sensitive": true},
-        {"name": "OBJECT_NAME", "type": "VARCHAR2", "sensitive": false},
-        {"name": "OBJECT_TYPE", "type": "VARCHAR2", "sensitive": false},
-        {"name": "CREATED", "type": "DATE", "sensitive": false},
-        {"name": "LAST_DDL_TIME", "type": "DATE", "sensitive": false},
-        {"name": "STATUS", "type": "VARCHAR2", "sensitive": false}
+        {
+          "name": "OWNER",
+          "type": "VARCHAR2",
+          "sensitive": true
+        },
+        {
+          "name": "OBJECT_NAME",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "OBJECT_TYPE",
+          "type": "VARCHAR2",
+          "sensitive": false
+        },
+        {
+          "name": "CREATED",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "LAST_DDL_TIME",
+          "type": "DATE",
+          "sensitive": false
+        },
+        {
+          "name": "STATUS",
+          "type": "VARCHAR2",
+          "sensitive": false
+        }
       ]
     }
   ],
   "safety_classification": "SAFE_READONLY",
-  "doc_hint": "Zero invalid objects is the target. If found, investigate the owner, object type, and last modification time. May require recompilation or schema refresh.",
-  "analysis_prompt": "Count total invalid objects by type and owner. Determine if this is a data integrity risk. Recommend recompilation steps if needed."
+  "doc_hint": "Zero invalid objects is the target state. Any invalid objects indicate compilation failures or schema inconsistencies. Investigate the owner schema and object type. May require recompilation or schema refresh.",
+  "analysis_prompt": "Count total invalid objects. Group by object type and owner schema. If any invalid objects found, determine root cause and recommend recompilation or schema fix steps."
 }
