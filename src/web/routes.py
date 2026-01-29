@@ -177,7 +177,7 @@ def register_routes(app):
                 logger.debug(f"[{request_id}] System prompt len={len(system_prompt)}, context len={len(context_prompt)}")
                 
                 ollama_start = datetime.utcnow()
-                logger.debug(f"[{request_id}] Calling Ollama with model={ollama_client.model}")
+                logger.debug(f"[{request_id}] Calling Ollama with model={ollama_client.model_name}")
                 summary_response = ollama_client.summarize(system_prompt, context_prompt, user_prompt)
                 ollama_time_ms = (datetime.utcnow() - ollama_start).total_seconds() * 1000
                 
@@ -187,7 +187,7 @@ def register_routes(app):
                 else:
                     logger.info(
                         f"[{request_id}] Ollama response: verdict={summary_response.verdict}, "
-                        f"summary_bullets={len(summary_response.summary)}, "
+                        f"summary_bullets={len(summary_response.summary_bullets)}, "
                         f"duration={ollama_time_ms:.0f}ms"
                     )
 
