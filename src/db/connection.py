@@ -73,7 +73,6 @@ class DBConnectionPool:
                 increment=2,
                 homogeneous=True,
                 threaded=True,
-                session_mode=oracledb.AUTH_MODE_DEFAULT,
             )
 
             logger.info(
