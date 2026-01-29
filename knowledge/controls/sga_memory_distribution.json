@@ -8,13 +8,19 @@
     "en": [
       "sga",
       "memory",
-      "bellek",
       "buffer",
       "cache",
-      "shared"
+      "shared pool",
+      "memory allocation",
+      "sga component"
     ],
     "tr": [
-      "shared"
+      "bellek",
+      "arabellek",
+      "ön bellek",
+      "paylaşılan havuz",
+      "bellek ayırması",
+      "sga bileşeni"
     ]
   },
   "queries": [

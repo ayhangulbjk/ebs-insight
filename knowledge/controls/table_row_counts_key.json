@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "title": "Key Table Row Counts / Ana Tablo Satır Sayıları",
   "description": "Shows row counts for key EBS operational tables",
-  "intent": "data_integrity",
+  "intent": "performance",
   "keywords": {
     "en": [
       "tablo",
@@ -42,7 +42,7 @@
         },
         {
           "name": "LAST_ANALYZED",
-          "type": "VARCHAR2",
+          "type": "DATE",
           "sensitive": false
         }
       ]

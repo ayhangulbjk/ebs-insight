@@ -7,13 +7,20 @@
   "keywords": {
     "en": [
       "index",
-      "indeks",
       "fragmentation",
       "stats",
-      "performance"
+      "performance",
+      "index fragmentation",
+      "index rebuild",
+      "statistics"
     ],
     "tr": [
-      "parçalanma"
+      "indeks",
+      "parçalanma",
+      "istatistikler",
+      "performans",
+      "indeks parçalanması",
+      "indeks yeniden oluşturma"
     ]
   },
   "queries": [
@@ -46,7 +53,7 @@
         },
         {
           "name": "BLEVEL",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {

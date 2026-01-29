@@ -7,13 +7,21 @@
   "keywords": {
     "en": [
       "user",
-      "sorumluluk",
       "responsibility",
       "fnd",
-      "access"
+      "access",
+      "fnd user",
+      "user access",
+      "responsibility assignment",
+      "active user"
     ],
     "tr": [
-      "kullanıcı"
+      "kullanıcı",
+      "sorumluluk",
+      "kullanıcı sorumlulu\u011fu",
+      "eri\u015fim",
+      "aktif kullanıcı",
+      "fnd kullanıcı"
     ]
   },
   "queries": [
@@ -46,7 +54,7 @@
         },
         {
           "name": "LAST_LOGIN",
-          "type": "VARCHAR2",
+          "type": "DATE",
           "sensitive": false
         }
       ]

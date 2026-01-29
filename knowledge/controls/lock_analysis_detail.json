@@ -6,17 +6,23 @@
   "intent": "performance",
   "keywords": {
     "en": [
-      "kilit",
       "lock",
       "blocker",
-      "engelleme",
       "wait",
-      "bekleme",
       "deadlock",
-      "kilitlenme"
+      "lock holder",
+      "lock waiter",
+      "blocking session",
+      "lock analysis"
     ],
     "tr": [
-      "kilitlenme"
+      "kilit",
+      "engelleme",
+      "bekleme",
+      "kilitlenme",
+      "kilit analizi",
+      "engelleme durumu",
+      "bekleyen oturum"
     ]
   },
   "queries": [
@@ -29,17 +35,17 @@
       "result_schema": [
         {
           "name": "SID",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {
           "name": "ID1",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {
           "name": "ID2",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {

@@ -6,15 +6,22 @@
   "intent": "performance",
   "keywords": {
     "en": [
-      "parametre",
       "parameter",
       "init",
       "configuration",
-      "ayar",
-      "setting"
+      "setting",
+      "critical parameter",
+      "db parameter",
+      "processes",
+      "memory"
     ],
     "tr": [
-      "setting"
+      "parametre",
+      "başlatma",
+      "yapılandırma",
+      "ayar",
+      "kritik parametre",
+      "veritabanı parametresi"
     ]
   },
   "queries": [

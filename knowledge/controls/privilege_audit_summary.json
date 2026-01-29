@@ -8,13 +8,20 @@
     "en": [
       "privilege",
       "security",
-      "denetim",
       "audit",
-      "user"
+      "user",
+      "system privilege",
+      "grant",
+      "overprivileged"
     ],
     "tr": [
       "ayrıcalık",
-      "güvenlik"
+      "güvenlik",
+      "denetim",
+      "kullanıcı",
+      "sistem ayrıcalığı",
+      "izin",
+      "aşırı ayrıcalıklı"
     ]
   },
   "queries": [
@@ -37,7 +44,7 @@
         },
         {
           "name": "DISTINCT_PRIV",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         }
       ]

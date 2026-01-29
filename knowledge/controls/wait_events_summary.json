@@ -7,14 +7,23 @@
   "keywords": {
     "en": [
       "wait",
-      "bekleme",
       "event",
-      "olay",
       "performance",
-      "performans"
+      "wait event",
+      "top wait",
+      "log file sync",
+      "db file read",
+      "i/o wait"
     ],
     "tr": [
-      "performans"
+      "bekleme",
+      "olay",
+      "performans",
+      "bekleme olayı",
+      "en yüksek bekleme",
+      "günlük dosya senkronizasyonu",
+      "veri tabanı dosya okuma",
+      "giriş çıkış bekleme"
     ]
   },
   "queries": [
@@ -37,7 +46,7 @@
         },
         {
           "name": "TOTAL_WAIT_SEC",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {
@@ -47,7 +56,7 @@
         },
         {
           "name": "AVG_WAIT_MS",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         }
       ]

@@ -6,16 +6,23 @@
   "intent": "invalid_objects",
   "keywords": {
     "en": [
-      "hata",
       "error",
       "compile",
-      "derle",
       "plsql",
       "procedure",
-      "package"
+      "package",
+      "compilation error",
+      "compile error",
+      "syntax error"
     ],
     "tr": [
-      "package"
+      "hata",
+      "derleme",
+      "plsql",
+      "prosedür",
+      "paket",
+      "derleme hatası",
+      "sözdizimi hatası"
     ]
   },
   "queries": [
@@ -43,12 +50,12 @@
         },
         {
           "name": "LINE",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {
           "name": "POSITION",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {

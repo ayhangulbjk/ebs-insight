@@ -7,15 +7,22 @@
   "keywords": {
     "en": [
       "datafile",
-      "dosya",
       "offline",
       "recovery",
       "restore",
-      "durum",
-      "status"
+      "status",
+      "datafile status",
+      "file status",
+      "recovery status"
     ],
     "tr": [
-      "status"
+      "veri dosyası",
+      "çevrimdışı",
+      "kurtarma",
+      "geri yükleme",
+      "durum",
+      "dosya durumu",
+      "veri dosyası durumu"
     ]
   },
   "queries": [
@@ -43,7 +50,7 @@
         },
         {
           "name": "GB",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {

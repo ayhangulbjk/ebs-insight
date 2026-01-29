@@ -6,17 +6,22 @@
   "intent": "performance",
   "keywords": {
     "en": [
-      "nesne",
       "object",
       "table",
       "index",
-      "kilit",
       "lock",
-      "table",
-      "tablo"
+      "locked object",
+      "locked table",
+      "session lock"
     ],
     "tr": [
-      "tablo"
+      "nesne",
+      "tablo",
+      "indeks",
+      "kilit",
+      "kilitli nesne",
+      "kilitli tablo",
+      "oturum kilidi"
     ]
   },
   "queries": [
@@ -29,12 +34,12 @@
       "result_schema": [
         {
           "name": "SESSION_ID",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {
           "name": "LOCKED_MODE",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         },
         {
@@ -64,7 +69,7 @@
         },
         {
           "name": "OBJECT_ID",
-          "type": "VARCHAR2",
+          "type": "NUMBER",
           "sensitive": false
         }
       ]
