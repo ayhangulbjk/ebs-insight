@@ -161,6 +161,9 @@ class RouterDecision(BaseModel):
     selected_control_version: Optional[str] = Field(
         default=None, description="Selected control version"
     )
+    confidence: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="Final routing confidence (0-1)"
+    )
     justification: str = Field(
         ..., description="Human-readable explanation of routing decision"
     )

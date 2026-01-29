@@ -101,6 +101,7 @@ class ScoreBasedRouter:
                 intent_confidence=0.0,
                 candidates=[],
                 selected_control_id=None,
+                confidence=0.0,
                 justification="Catalog is empty or no matching controls found",
                 ambiguity_threshold_breach=True,
                 suggested_interpretations=[],
@@ -148,9 +149,10 @@ class ScoreBasedRouter:
                 intent_confidence=top_candidate.final_score,
                 candidates=candidates[: self.TOP_N_CANDIDATES],
                 selected_control_id=None,
+                confidence=0.0,
                 justification=(
                     f"Confidence below threshold ({top_candidate.final_score:.1%}). "
-                    f"Confidence sorunuzu daha açık yazabilir misiniz?"
+                    f"Lütfen sorunuzu daha açık yazabilir misiniz?"
                 ),
                 ambiguity_threshold_breach=True,
                 suggested_interpretations=self._get_suggestions(candidates[:3]),
@@ -174,9 +176,10 @@ class ScoreBasedRouter:
                     candidates=candidates[: self.TOP_N_CANDIDATES],
                     selected_control_id=top_candidate.control_id,
                     selected_control_version=top_candidate.control_version,
+                    confidence=top_candidate.final_score,
                     justification=(
                         f"Seçilen kontrol: {self.catalog.get_control(top_candidate.control_id).title}. "
-                        f"Ancak başka yorumlamalar da olası olduğu için lütfen doğrulaması yapın."
+                        f"Ancak başka yorumlamalar da olası olduğu için lütfen doğrulama yapın."
                     ),
                     ambiguity_threshold_breach=True,
                     suggested_interpretations=self._get_suggestions(candidates[:3]),
@@ -198,6 +201,7 @@ class ScoreBasedRouter:
             candidates=candidates[: self.TOP_N_CANDIDATES],
             selected_control_id=top_candidate.control_id,
             selected_control_version=top_candidate.control_version,
+            confidence=top_candidate.final_score,
             justification=justification,
             ambiguity_threshold_breach=False,
             suggested_interpretations=[],

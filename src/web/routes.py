@@ -62,20 +62,26 @@ def register_routes(app):
             logger.info(f"[{request_id}] Chat request: '{user_prompt[:100]}'")
 
             # ===== STEP 1: Intent Classification =====
+            logger.debug(f"[{request_id}] STEP 1: Starting intent classification")
             intent_classifier = current_app.config.get("intent_classifier")
             if not intent_classifier:
+                logger.error(f"[{request_id}] Intent classifier not initialized")
                 return _error_response(request_id, "Intent classifier not initialized", 500)
 
+            intent_start = datetime.utcnow()
             intent_result = intent_classifier.classify(user_prompt)
-            logger.debug(f"[{request_id}] Intent: {intent_result.intent} ({intent_result.confidence:.1%})")
+            intent_time_ms = (datetime.utcnow() - intent_start).total_seconds() * 1000
+            logger.info(f"[{request_id}] Intent classified: {intent_result.intent} ({intent_result.confidence:.1%}), duration={intent_time_ms:.0f}ms")
 
             # ===== STEP 2: Routing (if EBS control) =====
+            logger.debug(f"[{request_id}] STEP 2: Processing intent={intent_result.intent}")
             if intent_result.intent == "chit_chat":
                 # Direct to Ollama for generic response
-                logger.info(f"[{request_id}] Classified as chit-chat")
+                logger.debug(f"[{request_id}] Routing chit-chat to generic response")
                 response_text = _generate_chit_chat_response(user_prompt)
                 
                 execution_time_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                logger.info(f"[{request_id}] Chit-chat response ready: {len(response_text)} chars, total_time={execution_time_ms:.0f}ms")
                 return jsonify({
                     "request_id": request_id,
                     "session_id": session_id,
@@ -94,16 +100,26 @@ def register_routes(app):
                 if not router or not catalog:
                     return _error_response(request_id, "Router or catalog not initialized", 500)
 
+                logger.debug(f"[{request_id}] Routing to control selection (intent={intent_result.intent})")
                 router_decision = router.route(user_prompt, intent_result.intent)
-                logger.debug(f"[{request_id}] Router decision: {router_decision.selected_control_id} ({router_decision.confidence:.3f})")
+                logger.info(
+                    f"[{request_id}] Router: selected={router_decision.selected_control_id}, "
+                    f"confidence={router_decision.confidence:.3f}, "
+                    f"ambiguous={router_decision.ambiguity_threshold_breach}"
+                )
 
                 if not router_decision.selected_control_id:
                     # Low confidence, ask clarification
+                    logger.warning(
+                        f"[{request_id}] Router ambiguous: confidence={router_decision.confidence:.3f}, "
+                        f"will ask clarification with {len(router_decision.suggested_interpretations)} suggestions"
+                    )
                     response_text = f"Sorunuzu daha net açıklamış olabilir misiniz? Örneğin:\n"
                     for interp in router_decision.suggested_interpretations[:3]:
                         response_text += f"\n- {interp}"
                     
                     execution_time_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                    logger.info(f"[{request_id}] Ambiguous response ready: total_time={execution_time_ms:.0f}ms")
                     return jsonify({
                         "request_id": request_id,
                         "session_id": session_id,
@@ -116,45 +132,78 @@ def register_routes(app):
                     }), 200
 
                 # ===== STEP 3: DB Query Execution =====
+                logger.debug(f"[{request_id}] STEP 3: Starting DB query execution")
                 control = catalog.get_control(router_decision.selected_control_id)
                 if not control:
+                    logger.error(f"[{request_id}] Control not found: {router_decision.selected_control_id}")
                     return _error_response(request_id, f"Control not found: {router_decision.selected_control_id}", 500)
+
+                logger.debug(f"[{request_id}] Control loaded: {control.control_id} v{control.version}")
 
                 executor = current_app.config.get("query_executor")
                 if not executor:
+                    logger.error(f"[{request_id}] Query executor not initialized")
                     return _error_response(request_id, "Query executor not initialized", 500)
 
                 db_start = datetime.utcnow()
+                logger.debug(f"[{request_id}] Executing {len(control.queries)} queries from control")
+                
                 exec_result = executor.execute_control(control, {})  # No binds for now
+                
                 db_time_ms = (datetime.utcnow() - db_start).total_seconds() * 1000
-                logger.debug(f"[{request_id}] DB execution: {len(exec_result.query_results)} queries, {db_time_ms:.0f}ms")
-
+                logger.info(
+                    f"[{request_id}] DB execution completed: {len(exec_result.query_results)} query results, "
+                    f"total_rows={sum(len(qr.rows) for qr in exec_result.query_results)}, "
+                    f"duration={db_time_ms:.0f}ms, errors={len(exec_result.errors)}"
+                )
+                
                 if exec_result.has_errors:
+                    logger.error(f"[{request_id}] DB execution errors: {exec_result.errors}")
                     return _error_response(request_id, "DB query execution failed", 500)
 
                 # ===== STEP 4: Ollama Summarization =====
+                logger.debug(f"[{request_id}] STEP 4: Starting Ollama summarization")
+                
                 ollama_client = current_app.config.get("ollama_client")
                 prompt_builder = current_app.config.get("prompt_builder")
                 if not ollama_client or not prompt_builder:
+                    logger.error(f"[{request_id}] Ollama client or prompt builder not initialized")
                     return _error_response(request_id, "Ollama client or prompt builder not initialized", 500)
 
+                logger.debug(f"[{request_id}] Building prompts for control: {control.control_id}")
                 system_prompt = prompt_builder.build_system_prompt()
                 context_prompt = prompt_builder.build_context_prompt(control, exec_result)
+                logger.debug(f"[{request_id}] System prompt len={len(system_prompt)}, context len={len(context_prompt)}")
                 
                 ollama_start = datetime.utcnow()
+                logger.debug(f"[{request_id}] Calling Ollama with model={ollama_client.model}")
                 summary_response = ollama_client.summarize(system_prompt, context_prompt, user_prompt)
                 ollama_time_ms = (datetime.utcnow() - ollama_start).total_seconds() * 1000
                 
                 if not summary_response:
-                    logger.warning(f"[{request_id}] Ollama summarization failed, returning raw data")
+                    logger.warning(f"[{request_id}] Ollama summarization failed/empty, returning fallback summary")
                     summary_response = _generate_fallback_summary(exec_result)
-
-                logger.info(f"[{request_id}] Ollama response: {summary_response.verdict}")
+                else:
+                    logger.info(
+                        f"[{request_id}] Ollama response: verdict={summary_response.verdict}, "
+                        f"summary_bullets={len(summary_response.summary)}, "
+                        f"duration={ollama_time_ms:.0f}ms"
+                    )
 
                 # ===== STEP 5: Response Formatting =====
+                logger.debug(f"[{request_id}] STEP 5: Formatting response")
                 response_text = _format_response(summary_response)
+                logger.debug(f"[{request_id}] Response formatted: {len(response_text)} chars, verdict={summary_response.verdict}")
                 
                 execution_time_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                logger.info(
+                    f"[{request_id}] Chat request completed: "
+                    f"intent={intent_result.intent}, "
+                    f"control={router_decision.selected_control_id}, "
+                    f"verdict={summary_response.verdict}, "
+                    f"total_time={execution_time_ms:.0f}ms "
+                    f"(intent={intent_time_ms:.0f}ms, db={db_time_ms:.0f}ms, ollama={ollama_time_ms:.0f}ms)"
+                )
 
                 return jsonify({
                     "request_id": request_id,
@@ -172,8 +221,10 @@ def register_routes(app):
 
             else:
                 # Unknown intent
+                logger.warning(f"[{request_id}] Unknown intent: {intent_result.intent}")
                 response_text = "Sorunuzu tam olarak anlayamadım. EBS ile ilgili bir soru sorabilir misiniz?"
                 execution_time_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                logger.info(f"[{request_id}] Unknown intent response ready: total_time={execution_time_ms:.0f}ms")
                 return jsonify({
                     "request_id": request_id,
                     "session_id": session_id,
@@ -186,7 +237,10 @@ def register_routes(app):
                 }), 200
 
         except Exception as e:
-            logger.error(f"[{request_id}] Chat error: {e}", exc_info=True)
+            logger.error(
+                f"[{request_id}] Chat request failed: {type(e).__name__}: {e}",
+                exc_info=True
+            )
             return _error_response(request_id, "İşlem sırasında bir hata oluştu.", 500, str(e))
 
     @app.route("/api/intent", methods=["POST"])
