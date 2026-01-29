@@ -395,14 +395,25 @@ def _generate_chit_chat_response(prompt: str) -> str:
 def _generate_fallback_summary(exec_result):
     """Generate fallback summary if Ollama fails"""
     from src.controls.schema import LLMSummaryResponse, LLMOutputVerdictType
+    from src.db.sanitizer import Sanitizer
     
-    bullet_count = sum(len(q.rows) for q in exec_result.query_results if q.rows)
+    # Get actual row count (not just displayed rows)
+    total_rows = sum(q.row_count for q in exec_result.query_results if not q.error)
+    displayed_rows = sum(len(q.rows) for q in exec_result.query_results if q.rows)
+    
+    # Check if rows were truncated
+    any_truncated = any(q.truncated for q in exec_result.query_results)
+    
+    bullets = [
+        f"{len(exec_result.query_results)} sorgu başarıyla çalıştırıldı.",
+        f"Toplam {total_rows} sonuç alındı (gösterilen: {displayed_rows}/{Sanitizer.MAX_ROWS} max).",
+    ]
+    
+    if any_truncated:
+        bullets.append(f"⚠️ Bazı sonuçlar {Sanitizer.MAX_ROWS} satır limitinden dolayı kısaltıldı.")
     
     return LLMSummaryResponse(
-        summary_bullets=[
-            f"{len(exec_result.query_results)} sorgu başarıyla çalıştırıldı.",
-            f"Toplam {bullet_count} sonuç alındı.",
-        ],
+        summary_bullets=bullets,
         verdict=LLMOutputVerdictType.UNKNOWN,
         evidence=[
             "Ollama özetleme başarısız, ham veriler yukarıda gösterilmektedir."
