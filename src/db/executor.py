@@ -127,9 +127,9 @@ class QueryExecutor:
             if binds:
                 # Validate binds
                 self._validate_binds(binds, query_definition.get("binds", []))
-                cursor.execute(sql, binds, timeout=timeout_seconds)
+                cursor.execute(sql, binds)
             else:
-                cursor.execute(sql, timeout=timeout_seconds)
+                cursor.execute(sql)
 
             # Step 3: Fetch results with row limit
             # ====================================
@@ -226,6 +226,9 @@ class QueryExecutor:
             if result.error:
                 has_errors = True
 
+        # Collect all error messages from failed queries
+        error_messages = [qr.error for qr in query_results if qr.error]
+
         return ControlExecutionResult(
             control_id=control_id,
             control_version=control_version,
@@ -233,6 +236,7 @@ class QueryExecutor:
             query_results=query_results,
             total_execution_time_ms=total_time,
             has_errors=has_errors,
+            errors=error_messages,
             sanitized=True,
         )
 

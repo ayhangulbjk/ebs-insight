@@ -204,6 +204,9 @@ class ControlExecutionResult(BaseModel):
     )
     total_execution_time_ms: float = Field(..., description="Total time for all queries")
     has_errors: bool = Field(..., description="True if any query failed")
+    errors: List[str] = Field(
+        default_factory=list, description="List of error messages from failed queries"
+    )
     sanitized: bool = Field(
         default=True, description="True if sensitive data was redacted"
     )

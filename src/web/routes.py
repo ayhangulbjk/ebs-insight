@@ -151,10 +151,11 @@ def register_routes(app):
                 exec_result = executor.execute_control(control, {})  # No binds for now
                 
                 db_time_ms = (datetime.utcnow() - db_start).total_seconds() * 1000
+                error_count = len([qr for qr in exec_result.query_results if qr.error])
                 logger.info(
                     f"[{request_id}] DB execution completed: {len(exec_result.query_results)} query results, "
                     f"total_rows={sum(len(qr.rows) for qr in exec_result.query_results)}, "
-                    f"duration={db_time_ms:.0f}ms, errors={len(exec_result.errors)}"
+                    f"duration={db_time_ms:.0f}ms, errors={error_count}"
                 )
                 
                 if exec_result.has_errors:
