@@ -50,6 +50,58 @@ class OllamaClient:
             logger.error(f"✗ Ollama connectivity check failed: {e}")
             return False
 
+    def generate_chat_response(self, user_message: str) -> Optional[str]:
+        """
+        Generate a general chat response (not EBS-specific).
+        Used for chit-chat when control match score is too low.
+        
+        Per AGENTS.md § 2: Chit-chat without DB context.
+        
+        Args:
+            user_message: User's chat message
+            
+        Returns:
+            Response text or None if failed
+        """
+        system_prompt = (
+            "Sen EBS sistemleriyle ilgili soruları yanıtlamaya yardımcı olan bir asistansın. "
+            "Eğer EBS sistemiyle ilgili değilse, genel sohbete devam edebilirsin. "
+            "Yanıtlarını kısa ve öz tut."
+        )
+        
+        full_prompt = f"{system_prompt}\n\nUser: {user_message}"
+        
+        try:
+            logger.debug(f"Calling Ollama for chat (non-EBS): {self.model_name}")
+            
+            response = requests.post(
+                self.generate_endpoint,
+                json={
+                    "model": self.model_name,
+                    "prompt": full_prompt,
+                    "stream": False,
+                    "temperature": 0.7,  # Higher temperature for conversational responses
+                    "top_p": 0.95,
+                },
+                timeout=self.timeout_seconds,
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                chat_response = result.get("response", "").strip()
+                logger.info(f"✓ Chat response generated ({len(chat_response)} chars)")
+                return chat_response
+            else:
+                logger.error(f"✗ Ollama returned {response.status_code}: {response.text}")
+                return None
+                
+        except requests.Timeout:
+            logger.error(f"✗ Ollama chat timeout after {self.timeout_seconds}s")
+            return None
+        except Exception as e:
+            logger.error(f"✗ Ollama chat call failed: {e}")
+            return None
+
     def summarize(
         self, system_prompt: str, context: str, user_question: str
     ) -> Optional[LLMSummaryResponse]:

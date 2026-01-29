@@ -1,0 +1,21 @@
+{
+  "control_id": "datafile_status",
+  "version": "1.0.0",
+  "title": "Datafile Status / Veri Dosyası Durumu",
+  "description": "Shows datafile status (ONLINE, OFFLINE, RECOVER) and space utilization",
+  "intent": "storage",
+  "keywords": ["datafile", "dosya", "offline", "recovery", "restore", "durum", "status"],
+  "queries": [
+    {
+      "query_id": "datafile_status_check",
+      "sql": "SELECT df.file#, df.name, df.status, df.bytes / (1024*1024*1024) GB, df.creation_change#, ROUND(100 * (df.bytes - nvl(sum(fs.bytes), 0)) / df.bytes) pct_used FROM v$datafile df LEFT JOIN dba_free_space fs ON df.file# = fs.file_id GROUP BY df.file#, df.name, df.status, df.bytes, df.creation_change# ORDER BY df.file#",
+      "binds": [],
+      "row_limit": 500,
+      "timeout_seconds": 30,
+      "result_schema": ["FILE#", "NAME", "STATUS", "GB", "CREATION_CHANGE#", "PCT_USED"]
+    }
+  ],
+  "doc_hint": "Shows datafile status (ONLINE, OFFLINE, RECOVER, etc.) and space utilization. OFFLINE or RECOVER status requires investigation.",
+  "analysis_prompt": "Check datafile status. Report: (1) any offline/recover files, (2) which tablespaces are nearly full, (3) recommend growth/archival for high-utilization files.",
+  "safety_classification": "SAFE_READONLY"
+}

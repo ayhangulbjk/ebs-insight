@@ -1,0 +1,21 @@
+{
+  "control_id": "wait_events_summary",
+  "version": "1.0.0",
+  "title": "Top Wait Events / En İyi Bekleme Olayları",
+  "description": "Shows top system wait events and their frequency",
+  "intent": "performance",
+  "keywords": ["wait", "bekleme", "event", "olay", "performance", "performans"],
+  "queries": [
+    {
+      "query_id": "top_wait_events",
+      "sql": "SELECT event, wait_class, SUM(time_waited_micro) / 1e6 total_wait_sec, SUM(total_waits) total_waits, ROUND(SUM(time_waited_micro) / SUM(total_waits) / 1e3) avg_wait_ms FROM v$system_event WHERE event NOT IN ('SQL*Net message from client', 'pmon timer', 'smon timer') GROUP BY event, wait_class ORDER BY total_wait_sec DESC FETCH FIRST 20 ROWS ONLY",
+      "binds": [],
+      "row_limit": 30,
+      "timeout_seconds": 30,
+      "result_schema": ["EVENT", "WAIT_CLASS", "TOTAL_WAIT_SEC", "TOTAL_WAITS", "AVG_WAIT_MS"]
+    }
+  ],
+  "doc_hint": "Top system wait events. High 'log file sync' or 'db file sequential read' waits indicate I/O bottlenecks. Focus on non-idle events.",
+  "analysis_prompt": "Analyze top wait events. Report: (1) most time-consuming waits, (2) if I/O-bound (db file events), (3) if log-bound (log file sync), (4) recommend investigation.",
+  "safety_classification": "SAFE_READONLY"
+}

@@ -1,0 +1,21 @@
+{
+  "control_id": "fnd_compile_errors",
+  "version": "1.0.0",
+  "title": "PL/SQL Compile Errors / PL/SQL Derleme Hataları",
+  "description": "Shows PL/SQL compilation errors in EBS schemas",
+  "intent": "invalid_objects",
+  "keywords": ["hata", "error", "compile", "derle", "plsql", "procedure", "package"],
+  "queries": [
+    {
+      "query_id": "plsql_errors",
+      "sql": "SELECT owner, name, type, line, position, text FROM dba_errors WHERE owner IN ('APPLSYS', 'APPS', 'GL', 'AR', 'AP') ORDER BY owner, name, line FETCH FIRST 100 ROWS ONLY",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["OWNER", "NAME", "TYPE", "LINE", "POSITION", "TEXT"]
+    }
+  ],
+  "doc_hint": "Shows PL/SQL compilation errors in key EBS schemas. Use to identify broken packages/procedures.",
+  "analysis_prompt": "List PL/SQL errors in EBS schemas. For each error: (1) which object is affected, (2) error message type, (3) recommend recompilation or investigation.",
+  "safety_classification": "SAFE_READONLY"
+}

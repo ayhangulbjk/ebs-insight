@@ -1,0 +1,21 @@
+{
+  "control_id": "active_sessions_overview",
+  "version": "1.0.0",
+  "title": "Active Sessions Overview / Aktif Oturumlar Özeti",
+  "description": "Lists all active user sessions connected to EBS database with connection details",
+  "intent": "session_analysis",
+  "keywords": ["oturum", "session", "user", "bağlı", "connected", "active", "kullanıcı"],
+  "queries": [
+    {
+      "query_id": "active_sessions_detail",
+      "sql": "SELECT s.sid, s.serial#, s.username, s.osuser, s.machine, s.logon_time, s.status, COUNT(*) stmt_count FROM v$session s WHERE s.username IS NOT NULL AND s.type != 'BACKGROUND' GROUP BY s.sid, s.serial#, s.username, s.osuser, s.machine, s.logon_time, s.status ORDER BY s.logon_time DESC",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["SID", "SERIAL#", "USERNAME", "OSUSER", "MACHINE", "LOGON_TIME", "STATUS", "STMT_COUNT"]
+    }
+  ],
+  "doc_hint": "Lists all active user sessions connected to EBS database. Check for long-running sessions, ghost connections, and resource consumption.",
+  "analysis_prompt": "Analyze the active sessions. Identify: (1) how many users connected, (2) any connections from unexpected machines, (3) sessions with many statements, (4) idle sessions that should be closed.",
+  "safety_classification": "SAFE_READONLY"
+}

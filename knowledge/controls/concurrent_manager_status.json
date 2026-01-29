@@ -1,0 +1,21 @@
+{
+  "control_id": "concurrent_manager_status",
+  "version": "1.0.0",
+  "title": "Concurrent Manager Health / Eşzamanlı Yönetici Sağlığı",
+  "description": "Displays all concurrent managers and their operational status",
+  "intent": "conc_mgr",
+  "keywords": ["concurrent", "manager", "eşzamanlı", "yönetici", "sağlık", "health", "request", "process"],
+  "queries": [
+    {
+      "query_id": "conc_mgr_processes",
+      "sql": "SELECT fcpt.concurrent_process_id, fcpt.process_status_code, fcp.queue_control_flag, fcp.max_processes, fcp.current_processes, fcpt.process_name, fcpt.os_process_id, fcpt.spid FROM fnd_concurrent_processes fcp JOIN fnd_concurrent_process_types fcpt ON fcp.process_type_id = fcpt.process_type_id WHERE fcpt.process_status_code IN ('A', 'I', 'E', 'S') ORDER BY fcpt.process_name",
+      "binds": [],
+      "row_limit": 200,
+      "timeout_seconds": 30,
+      "result_schema": ["CONCURRENT_PROCESS_ID", "PROCESS_STATUS_CODE", "QUEUE_CONTROL_FLAG", "MAX_PROCESSES", "CURRENT_PROCESSES", "PROCESS_NAME", "OS_PROCESS_ID", "SPID"]
+    }
+  ],
+  "doc_hint": "Displays all concurrent managers and their status. A=Active, I=Inactive, E=Error, S=Stopped. Check max_processes vs current_processes for capacity.",
+  "analysis_prompt": "Analyze concurrent manager statuses. Report: (1) which managers are down/errored, (2) current load vs capacity, (3) any process_type_id mismatches, (4) offline managers that should be running.",
+  "safety_classification": "SAFE_READONLY"
+}

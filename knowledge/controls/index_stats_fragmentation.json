@@ -1,0 +1,21 @@
+{
+  "control_id": "index_stats_fragmentation",
+  "version": "1.0.0",
+  "title": "Index Fragmentation Analysis / İndeks Parçalanma Analizi",
+  "description": "Analyzes index fragmentation and structure metrics",
+  "intent": "performance",
+  "keywords": ["index", "indeks", "fragmentation", "parçalanma", "stats", "performance"],
+  "queries": [
+    {
+      "query_id": "index_fragmentation",
+      "sql": "SELECT owner, index_name, table_name, num_rows, blevel, leaf_blocks FROM dba_indexes WHERE owner IN ('GL', 'AR', 'AP', 'PO', 'APPS') AND num_rows > 10000 ORDER BY blevel DESC FETCH FIRST 30 ROWS ONLY",
+      "binds": [],
+      "row_limit": 50,
+      "timeout_seconds": 30,
+      "result_schema": ["OWNER", "INDEX_NAME", "TABLE_NAME", "NUM_ROWS", "BLEVEL", "LEAF_BLOCKS"]
+    }
+  ],
+  "doc_hint": "Shows index metrics. High BLEVEL (> 4) indicates deep index trees. Fragmentation degrades performance and rebuilding may help.",
+  "analysis_prompt": "Analyze index structure. Report: (1) indexes with high BLEVEL, (2) large leaf_block counts, (3) recommend rebuilding for performance.",
+  "safety_classification": "SAFE_READONLY"
+}

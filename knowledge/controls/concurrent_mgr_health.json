@@ -97,11 +97,11 @@
       "query_id": "queue_backlog",
       "timeout_seconds": 30,
       "row_limit": 50,
-      "sql": "SELECT fcpm.process_name, COUNT(fcr.request_id) as pending_requests, MIN(fcr.request_date) as oldest_request_date, MAX(fcr.completion_date) as last_completed FROM apps.fnd_concurrent_processes fcpm LEFT JOIN apps.fnd_concurrent_requests fcr ON fcpm.concurrent_process_id = fcr.concurrent_process_id AND fcr.phase_code = 'P' WHERE fcpm.process_name NOT IN ('Queue Minder', 'ICM') GROUP BY fcpm.process_name ORDER BY pending_requests DESC",
+      "sql": "SELECT fcu.user_concurrent_queue_name, COUNT(fcr.request_id) as pending_requests, MIN(fcr.request_date) as oldest_request_date, MAX(fcr.completion_date) as last_completed FROM fnd_concurrent_queues_vl fcu LEFT JOIN fnd_concurrent_requests fcr ON fcu.concurrent_queue_id = fcr.concurrent_queue_id AND fcr.phase_code = 'P' WHERE fcu.user_concurrent_queue_name NOT IN ('Queue Minder', 'ICM') GROUP BY fcu.user_concurrent_queue_name ORDER BY pending_requests DESC",
       "binds": [],
       "result_schema": [
         {
-          "name": "process_name",
+          "name": "queue_name",
           "type": "VARCHAR2",
           "sensitive": false
         },

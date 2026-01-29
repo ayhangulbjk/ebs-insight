@@ -1,0 +1,21 @@
+{
+  "control_id": "archive_log_status",
+  "version": "1.0.0",
+  "title": "Archive Log Status / Arşiv Günlüğü Durumu",
+  "description": "Shows archive log destinations and their status",
+  "intent": "storage",
+  "keywords": ["archive", "arşiv", "log", "günlük", "destination", "hedef"],
+  "queries": [
+    {
+      "query_id": "archive_destination_status",
+      "sql": "SELECT dest_id, dest_name, status, destination, archiver, type_flags FROM v$archive_dest WHERE dest_id BETWEEN 1 AND 31 ORDER BY dest_id",
+      "binds": [],
+      "row_limit": 50,
+      "timeout_seconds": 30,
+      "result_schema": ["DEST_ID", "DEST_NAME", "STATUS", "DESTINATION", "ARCHIVER", "TYPE_FLAGS"]
+    }
+  ],
+  "doc_hint": "Shows archive log destinations and status. DEFERRED, QUOTA_FULL, or other non-VALID status requires investigation.",
+  "analysis_prompt": "Check archive log destinations. Identify: (1) which destinations are failing, (2) if archiving is enabled, (3) recommend checking alert log and disk space.",
+  "safety_classification": "SAFE_READONLY"
+}

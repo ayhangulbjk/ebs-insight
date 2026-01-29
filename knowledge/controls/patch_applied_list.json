@@ -1,0 +1,21 @@
+{
+  "control_id": "patch_applied_list",
+  "version": "1.0.0",
+  "title": "Recent Patches Applied / Uygulanan Son Yamalar",
+  "description": "Shows recently applied patches from patch history",
+  "intent": "patches",
+  "keywords": ["yama", "patch", "uygulanan", "applied", "history", "tarih"],
+  "queries": [
+    {
+      "query_id": "recent_patches",
+      "sql": "SELECT bug_number, patch_name, applied_flag, apply_date FROM ad_patch_hist WHERE applied_flag = 'Y' ORDER BY apply_date DESC FETCH FIRST 50 ROWS ONLY",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["BUG_NUMBER", "PATCH_NAME", "APPLIED_FLAG", "APPLY_DATE"]
+    }
+  ],
+  "doc_hint": "Shows recently applied patches from AD_PATCH_HIST. Use to correlate with issues or understand patch management history.",
+  "analysis_prompt": "Review patch history. Report: (1) date of last patch application, (2) patches applied in last 30/90 days, (3) if security patches are present.",
+  "safety_classification": "SAFE_READONLY"
+}

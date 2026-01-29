@@ -1,0 +1,21 @@
+{
+  "control_id": "lock_analysis_detail",
+  "version": "1.0.0",
+  "title": "Lock Analysis / Kilit Analizi",
+  "description": "Identifies lock holders and waiters, showing which sessions are blocking others",
+  "intent": "locks",
+  "keywords": ["kilit", "lock", "blocker", "engelleme", "wait", "bekleme", "deadlock", "kilitlenme"],
+  "queries": [
+    {
+      "query_id": "lock_holders_waiters",
+      "sql": "SELECT DISTINCT l.sid, l.id1, l.id2, l.type, DECODE(l.lmode, 0, 'NONE', 1, 'NULL', 2, 'RS', 3, 'RX', 4, 'S', 5, 'RSX', 6, 'X', 'UNKNOWN') mode_held, DECODE(l.request, 0, 'NONE', 1, 'NULL', 2, 'RS', 3, 'RX', 4, 'S', 5, 'RSX', 6, 'X', 'UNKNOWN') mode_requested, s.username, s.machine, s.status FROM v$lock l JOIN v$session s ON l.sid = s.sid WHERE l.lmode > 0 OR l.request > 0 ORDER BY l.id1, l.id2, l.sid",
+      "binds": [],
+      "row_limit": 500,
+      "timeout_seconds": 30,
+      "result_schema": ["SID", "ID1", "ID2", "TYPE", "MODE_HELD", "MODE_REQUESTED", "USERNAME", "MACHINE", "STATUS"]
+    }
+  ],
+  "doc_hint": "Identifies lock holders and waiters. Look for SIDs that are blocking others (lmode > 0) and SIDs that are waiting (request > 0). Cross-reference with active sessions.",
+  "analysis_prompt": "Analyze lock holders and waiters. Identify: (1) what resources are locked, (2) which sessions are blocking others, (3) which sessions are waiting, (4) potential blockers to investigate or kill.",
+  "safety_classification": "SAFE_READONLY"
+}

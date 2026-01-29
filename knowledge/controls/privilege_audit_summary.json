@@ -1,0 +1,21 @@
+{
+  "control_id": "privilege_audit_summary",
+  "version": "1.0.0",
+  "title": "System Privilege Audit / Sistem Ayrıcalığı Denetimi",
+  "description": "Shows users with system privileges and their count",
+  "intent": "security",
+  "keywords": ["ayrıcalık", "privilege", "security", "güvenlik", "denetim", "audit", "user"],
+  "queries": [
+    {
+      "query_id": "grantee_privileges",
+      "sql": "SELECT grantee, COUNT(*) priv_count, COUNT(DISTINCT privilege) distinct_priv FROM dba_sys_privs GROUP BY grantee HAVING COUNT(*) > 5 ORDER BY priv_count DESC",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["GRANTEE", "PRIV_COUNT", "DISTINCT_PRIV"]
+    }
+  ],
+  "doc_hint": "Shows users with high system privilege counts. Users with more than 10-15 system privileges may be overprivileged. Cross-check with role memberships.",
+  "analysis_prompt": "Review system privilege grants. Identify: (1) users with excessive privileges, (2) if SYSDBA/SYSOPER are appropriately granted, (3) recommend privilege review/reduction.",
+  "safety_classification": "SENSITIVE"
+}

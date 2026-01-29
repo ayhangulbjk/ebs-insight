@@ -1,0 +1,21 @@
+{
+  "control_id": "db_parameters_critical",
+  "version": "1.0.0",
+  "title": "Critical DB Parameters / Kritik Veritabanı Parametreleri",
+  "description": "Shows critical database parameters and their current values",
+  "intent": "parameters",
+  "keywords": ["parametre", "parameter", "init", "configuration", "ayar", "setting"],
+  "queries": [
+    {
+      "query_id": "critical_parameters",
+      "sql": "SELECT name, value, type, isdefault FROM v$parameter WHERE name IN ('processes', 'open_cursors', 'sga_target', 'pga_aggregate_target', 'audit_trail', 'db_recovery_file_dest', 'compatible', 'db_name', 'memory_target') ORDER BY name",
+      "binds": [],
+      "row_limit": 50,
+      "timeout_seconds": 30,
+      "result_schema": ["NAME", "VALUE", "TYPE", "ISDEFAULT"]
+    }
+  ],
+  "doc_hint": "Shows critical database parameters and whether they differ from defaults. Use to verify configuration against EBS best practices.",
+  "analysis_prompt": "Review critical parameters. Check: (1) if processes is high enough for concurrent load, (2) if open_cursors is adequate, (3) memory allocation settings, (4) audit trail enabled.",
+  "safety_classification": "SAFE_READONLY"
+}

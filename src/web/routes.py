@@ -108,8 +108,54 @@ def register_routes(app):
                     f"ambiguous={router_decision.ambiguity_threshold_breach}"
                 )
 
-                if not router_decision.selected_control_id:
-                    # Low confidence, ask clarification
+                # ===== ADAPTIVE ROUTING: Low Score Detection =====
+                # Per AGENTS.md: If match score is too low, treat as chit-chat
+                # Use threshold of 0.10 (10% normalized score)
+                CHIT_CHAT_SCORE_THRESHOLD = 0.10
+                
+                if (not router_decision.selected_control_id or 
+                    router_decision.confidence < CHIT_CHAT_SCORE_THRESHOLD):
+                    
+                    # Low confidence score -> route to Ollama for general chat
+                    logger.info(
+                        f"[{request_id}] Low match score ({router_decision.confidence:.3f}), "
+                        f"routing to Ollama for chat response"
+                    )
+                    
+                    ollama_client = current_app.config.get("ollama_client")
+                    if not ollama_client:
+                        return _error_response(request_id, "Ollama client not initialized", 500)
+                    
+                    ollama_start = datetime.utcnow()
+                    response_text = ollama_client.generate_chat_response(user_prompt)
+                    ollama_time_ms = (datetime.utcnow() - ollama_start).total_seconds() * 1000
+                    
+                    if not response_text:
+                        # Fallback to generic response if Ollama fails
+                        response_text = (
+                            "Üzgünüm, sorunuzu anlayamadım. "
+                            "Lütfen EBS sistemine ilişkin spesifik bir soru sorun."
+                        )
+                        logger.warning(f"[{request_id}] Ollama chat failed, using fallback response")
+                    else:
+                        logger.info(f"[{request_id}] Chat response generated ({len(response_text)} chars, {ollama_time_ms:.0f}ms)")
+                    
+                    execution_time_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+                    logger.info(f"[{request_id}] Chat request completed: total_time={execution_time_ms:.0f}ms")
+                    
+                    return jsonify({
+                        "request_id": request_id,
+                        "session_id": session_id,
+                        "intent": "chit_chat",
+                        "intent_confidence": router_decision.confidence,
+                        "response": response_text,
+                        "verdict": "OK",
+                        "execution_time_ms": execution_time_ms,
+                        "timestamp": start_time.isoformat()
+                    }), 200
+                
+                # Original logic: Ambiguous case (but confidence above threshold)
+                if router_decision.ambiguity_threshold_breach:
                     logger.warning(
                         f"[{request_id}] Router ambiguous: confidence={router_decision.confidence:.3f}, "
                         f"will ask clarification with {len(router_decision.suggested_interpretations)} suggestions"

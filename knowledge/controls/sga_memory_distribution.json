@@ -1,0 +1,21 @@
+{
+  "control_id": "sga_memory_distribution",
+  "version": "1.0.0",
+  "title": "SGA Memory Distribution / SGA Bellek Dağılımı",
+  "description": "Shows SGA memory allocation by component",
+  "intent": "performance",
+  "keywords": ["sga", "memory", "bellek", "buffer", "cache", "shared"],
+  "queries": [
+    {
+      "query_id": "sga_components",
+      "sql": "SELECT component, ROUND(SUM(current_size) / (1024*1024*1024), 2) size_gb FROM v$sga_dynamic_components WHERE current_size > 0 GROUP BY component ORDER BY size_gb DESC",
+      "binds": [],
+      "row_limit": 50,
+      "timeout_seconds": 30,
+      "result_schema": ["COMPONENT", "SIZE_GB"]
+    }
+  ],
+  "doc_hint": "SGA breakdown by component. Buffer cache should be largest. Check if shared pool is adequately sized (no aged-out packages).",
+  "analysis_prompt": "Analyze SGA allocation. Report: (1) buffer cache size, (2) shared pool size, (3) large pool allocation, (4) if large_pool needs growth for parallelism.",
+  "safety_classification": "SAFE_READONLY"
+}

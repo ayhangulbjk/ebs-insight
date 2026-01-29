@@ -87,31 +87,21 @@
       "query_id": "adop_cycle_details",
       "timeout_seconds": 30,
       "row_limit": 30,
-      "sql": "SELECT adc.adop_cycle_id, adc.cycle_status, COUNT(adp.patch_id) as total_patches, SUM(CASE WHEN adp.patch_status = 'APPLIED' THEN 1 ELSE 0 END) as applied_patches, SUM(CASE WHEN adp.patch_status = 'FAILED' THEN 1 ELSE 0 END) as failed_patches FROM ad_adop_cycles adc LEFT JOIN ad_adop_patches adp ON adc.adop_cycle_id = adp.adop_cycle_id WHERE adc.cycle_status IN ('RUNNING', 'PENDING', 'COMPLETED', 'ERROR', 'FAILED') GROUP BY adc.adop_cycle_id, adc.cycle_status ORDER BY adc.creation_date DESC",
+      "sql": "SELECT 'ADOP' as cycle_type, SYSDATE as check_date, COUNT(*) as patch_count FROM fnd_patches WHERE status = 'A' OR status = 'E' GROUP BY SYSDATE",
       "binds": [],
       "result_schema": [
         {
-          "name": "adop_cycle_id",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "cycle_status",
+          "name": "cycle_type",
           "type": "VARCHAR2",
           "sensitive": false
         },
         {
-          "name": "total_patches",
-          "type": "NUMBER",
+          "name": "check_date",
+          "type": "DATE",
           "sensitive": false
         },
         {
-          "name": "applied_patches",
-          "type": "NUMBER",
-          "sensitive": false
-        },
-        {
-          "name": "failed_patches",
+          "name": "patch_count",
           "type": "NUMBER",
           "sensitive": false
         }

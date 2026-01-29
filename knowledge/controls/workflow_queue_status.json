@@ -54,7 +54,7 @@
       "query_id": "workflow_queue_summary",
       "timeout_seconds": 30,
       "row_limit": 1,
-      "sql": "SELECT COUNT(*) as pending_processes, COUNT(DISTINCT process_name) as unique_processes, MIN(creation_date) as oldest_pending FROM wf_process_instances WHERE execution_status_code IN ('PENDING', 'NOTIFIED', 'RUNNING')",
+      "sql": "SELECT COUNT(*) as pending_processes, COUNT(DISTINCT item_type) as unique_process_types, MIN(begin_date) as oldest_pending FROM wf_item_activity_statuses WHERE activity_status IN ('PENDING', 'NOTIFIED')",
       "binds": [],
       "result_schema": [
         {
@@ -63,7 +63,7 @@
           "sensitive": false
         },
         {
-          "name": "unique_processes",
+          "name": "unique_process_types",
           "type": "NUMBER",
           "sensitive": false
         },
@@ -78,16 +78,16 @@
       "query_id": "workflow_queue_by_process",
       "timeout_seconds": 30,
       "row_limit": 50,
-      "sql": "SELECT process_name, execution_status_code, COUNT(*) as process_count, MIN(creation_date) as oldest, MAX(last_update_date) as latest FROM wf_process_instances WHERE execution_status_code IN ('PENDING', 'NOTIFIED', 'RUNNING', 'ERROR') GROUP BY process_name, execution_status_code ORDER BY process_count DESC",
+      "sql": "SELECT item_type, activity_status, COUNT(*) as process_count, MIN(begin_date) as oldest, MAX(end_date) as latest FROM wf_item_activity_statuses WHERE activity_status IN ('PENDING', 'NOTIFIED') GROUP BY item_type, activity_status ORDER BY process_count DESC",
       "binds": [],
       "result_schema": [
         {
-          "name": "process_name",
+          "name": "item_type",
           "type": "VARCHAR2",
           "sensitive": false
         },
         {
-          "name": "execution_status_code",
+          "name": "activity_status",
           "type": "VARCHAR2",
           "sensitive": false
         },
@@ -112,11 +112,11 @@
       "query_id": "workflow_stuck_processes",
       "timeout_seconds": 30,
       "row_limit": 20,
-      "sql": "SELECT process_name, COUNT(*) as stuck_count, TRUNC(SYSDATE - MIN(creation_date)) as days_stuck FROM wf_process_instances WHERE execution_status_code IN ('PENDING', 'NOTIFIED') AND creation_date < SYSDATE - 1 GROUP BY process_name ORDER BY days_stuck DESC",
+      "sql": "SELECT item_type, COUNT(*) as stuck_count, TRUNC(SYSDATE - MIN(begin_date)) as days_pending FROM wf_item_activity_statuses WHERE activity_status IN ('PENDING', 'NOTIFIED') AND begin_date < SYSDATE - 1 GROUP BY item_type ORDER BY days_pending DESC",
       "binds": [],
       "result_schema": [
         {
-          "name": "process_name",
+          "name": "item_type",
           "type": "VARCHAR2",
           "sensitive": false
         },
@@ -126,7 +126,7 @@
           "sensitive": false
         },
         {
-          "name": "days_stuck",
+          "name": "days_pending",
           "type": "NUMBER",
           "sensitive": false
         }

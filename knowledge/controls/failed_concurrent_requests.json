@@ -1,0 +1,21 @@
+{
+  "control_id": "failed_concurrent_requests",
+  "version": "1.0.0",
+  "title": "Failed Concurrent Requests (24h) / Başarısız İstekler (24s)",
+  "description": "Lists failed concurrent requests from the last 24 hours",
+  "intent": "conc_mgr",
+  "keywords": ["başarısız", "failed", "error", "hata", "eşzamanlı", "concurrent", "request"],
+  "queries": [
+    {
+      "query_id": "failed_requests_24h",
+      "sql": "SELECT fcr.request_id, fcp.user_concurrent_program_name, fcr.status_code, fcr.phase_code, fcr.request_date, fu.user_name, fcr.completion_date FROM fnd_concurrent_requests fcr JOIN fnd_concurrent_programs fcp ON fcr.concurrent_program_id = fcp.concurrent_program_id JOIN fnd_user fu ON fcr.requested_by_user_id = fu.user_id WHERE fcr.status_code = 'E' AND fcr.request_date >= TRUNC(SYSDATE) - 1 ORDER BY fcr.request_date DESC",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["REQUEST_ID", "USER_CONCURRENT_PROGRAM_NAME", "STATUS_CODE", "PHASE_CODE", "REQUEST_DATE", "USER_NAME", "COMPLETION_DATE"]
+    }
+  ],
+  "doc_hint": "Shows failed concurrent requests in the last 24 hours. Use REQUEST_ID to query FND_CONCURRENT_REQUESTS.LOGFILE_NAME for error details.",
+  "analysis_prompt": "Summarize failed requests. Report: (1) count of failures in last 24h, (2) most frequently failing programs, (3) patterns (time-of-day, specific user, etc.), (4) recommend log investigation.",
+  "safety_classification": "SAFE_READONLY"
+}

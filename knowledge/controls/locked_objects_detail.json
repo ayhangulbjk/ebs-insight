@@ -1,0 +1,21 @@
+{
+  "control_id": "locked_objects_detail",
+  "version": "1.0.0",
+  "title": "Locked Objects / Kilitli Nesneler",
+  "description": "Shows which database objects are locked by which sessions",
+  "intent": "locks",
+  "keywords": ["nesne", "object", "table", "index", "kilit", "lock", "table", "tablo"],
+  "queries": [
+    {
+      "query_id": "locked_objects",
+      "sql": "SELECT l.session_id, l.locked_mode, l.oracle_username, l.os_user_name, o.owner, o.object_type, o.object_name, o.object_id FROM v$locked_object l JOIN dba_objects o ON l.object_id = o.object_id WHERE l.locked_mode != 0 ORDER BY l.session_id, o.object_name",
+      "binds": [],
+      "row_limit": 500,
+      "timeout_seconds": 30,
+      "result_schema": ["SESSION_ID", "LOCKED_MODE", "ORACLE_USERNAME", "OS_USER_NAME", "OWNER", "OBJECT_TYPE", "OBJECT_NAME", "OBJECT_ID"]
+    }
+  ],
+  "doc_hint": "Shows which database objects are locked by which sessions. Correlate with active sessions to identify problematic connections.",
+  "analysis_prompt": "Identify which tables/objects are locked. For each locked object: (1) what's the lock type, (2) who's holding it, (3) is it an EBS application table, (4) recommend session termination if needed.",
+  "safety_classification": "SAFE_READONLY"
+}

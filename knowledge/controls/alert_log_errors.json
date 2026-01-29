@@ -1,0 +1,21 @@
+{
+  "control_id": "alert_log_errors",
+  "version": "1.0.0",
+  "title": "Alert Log Errors (24h) / Uyarı Günlüğü Hataları (24s)",
+  "description": "Shows alert log errors and warnings from the last 24 hours",
+  "intent": "database_health",
+  "keywords": ["uyarı", "alert", "hata", "error", "günlük", "log", "warning"],
+  "queries": [
+    {
+      "query_id": "alert_log_recent",
+      "sql": "SELECT originating_timestamp, severity, message_text FROM v$diag_alert_log WHERE severity IN ('Error', 'Warning', 'Critical Error') AND originating_timestamp >= SYSDATE - 1 ORDER BY originating_timestamp DESC FETCH FIRST 100 ROWS ONLY",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["ORIGINATING_TIMESTAMP", "SEVERITY", "MESSAGE_TEXT"]
+    }
+  ],
+  "doc_hint": "Shows alert log entries in last 24 hours. Critical/error entries require investigation. May indicate I/O, memory, or recovery issues.",
+  "analysis_prompt": "Review alert log errors. Identify: (1) severity levels, (2) recurring error patterns, (3) if any ORA- errors indicate missing indexes/objects, (4) recommend action.",
+  "safety_classification": "SAFE_READONLY"
+}

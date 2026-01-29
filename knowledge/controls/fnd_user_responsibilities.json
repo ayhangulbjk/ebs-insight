@@ -1,0 +1,21 @@
+{
+  "control_id": "fnd_user_responsibilities",
+  "version": "1.0.0",
+  "title": "FND Users & Responsibilities / FND Kullanıcılar ve Sorumluluklar",
+  "description": "Lists active EBS users and their assigned responsibilities",
+  "intent": "users",
+  "keywords": ["kullanıcı", "user", "sorumluluk", "responsibility", "fnd", "access"],
+  "queries": [
+    {
+      "query_id": "active_users_responsibilities",
+      "sql": "SELECT fu.user_id, fu.user_name, fu.description, COUNT(DISTINCT fru.responsibility_id) resp_count, MAX(fu.last_logon_date) last_login FROM fnd_user fu LEFT JOIN fnd_user_resp_groups_direct fru ON fu.user_id = fru.user_id WHERE fu.end_date IS NULL GROUP BY fu.user_id, fu.user_name, fu.description ORDER BY fu.user_name FETCH FIRST 100 ROWS ONLY",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["USER_ID", "USER_NAME", "DESCRIPTION", "RESP_COUNT", "LAST_LOGIN"]
+    }
+  ],
+  "doc_hint": "Lists active EBS users and number of responsibilities assigned. High-responsibility accounts may be overprivileged.",
+  "analysis_prompt": "Review active users. Identify: (1) users with many responsibilities, (2) users not logging in recently, (3) critical system user counts, (4) recommend access review.",
+  "safety_classification": "SENSITIVE"
+}

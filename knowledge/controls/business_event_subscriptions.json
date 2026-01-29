@@ -1,0 +1,21 @@
+{
+  "control_id": "business_event_subscriptions",
+  "version": "1.0.0",
+  "title": "Business Event Subscriptions / İş Olayı Abonelikleri",
+  "description": "Shows workflow business event subscriptions and their status",
+  "intent": "workflow",
+  "keywords": ["olayı", "event", "subscription", "abone", "workflow", "iş", "business"],
+  "queries": [
+    {
+      "query_id": "event_subscriptions_status",
+      "sql": "SELECT es.event_subscription_id, es.subscription_name, es.event_filter_data, es.status FROM wf_event_subscriptions es WHERE es.rule_function IS NOT NULL ORDER BY es.subscription_name FETCH FIRST 50 ROWS ONLY",
+      "binds": [],
+      "row_limit": 100,
+      "timeout_seconds": 30,
+      "result_schema": ["EVENT_SUBSCRIPTION_ID", "SUBSCRIPTION_NAME", "EVENT_FILTER_DATA", "STATUS"]
+    }
+  ],
+  "doc_hint": "Shows workflow business event subscriptions and their status. Disabled subscriptions (status='D') should be investigated.",
+  "analysis_prompt": "Analyze business event subscriptions. Report: (1) disabled subscriptions, (2) high-volume events, (3) failed executions if tracked, (4) orphaned subscriptions.",
+  "safety_classification": "SAFE_READONLY"
+}
