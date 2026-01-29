@@ -91,7 +91,7 @@ class DBConnectionPool:
     def _test_connection(self):
         """Test connectivity to database"""
         try:
-            conn = self.pool.acquire(timeout=self.WAIT_TIMEOUT_SECONDS)
+            conn = self.pool.acquire()
             cursor = conn.cursor()
             cursor.execute("SELECT 1 FROM DUAL")
             cursor.close()
@@ -105,7 +105,7 @@ class DBConnectionPool:
         Acquire connection from pool.
         
         Args:
-            timeout: Wait timeout in seconds
+            timeout: Wait timeout in seconds (note: parameter not used in some oracledb versions)
             
         Returns:
             oracledb Connection object
@@ -117,7 +117,7 @@ class DBConnectionPool:
             raise DBConnectionError("Connection pool not initialized")
 
         try:
-            conn = self.pool.acquire(timeout=timeout)
+            conn = self.pool.acquire()
             return conn
         except Exception as e:
             logger.error(f"Failed to acquire connection: {e}")
