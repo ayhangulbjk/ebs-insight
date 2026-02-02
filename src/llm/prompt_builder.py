@@ -21,13 +21,15 @@ class PromptBuilder:
 
 Rules:
 - Summarize in 2-5 bullets
+- ALWAYS include sample data in summary (show 3-5 examples)
 - Verdict: OK/WARN/CRIT/UNKNOWN
 - Evidence: 2-3 key metrics
+- Provide detailed recommendations: what to check, how to fix
 - Turkish if prompt is Turkish
 
 Format:
 **Summary**
-- bullet 1
+- bullet 1 (with examples)
 - bullet 2
 
 **Verdict** [OK|WARN|CRIT|UNKNOWN]
@@ -35,8 +37,9 @@ Format:
 **Evidence**
 - metric 1
 
-**Next Steps** (optional)
-- action 1
+**Next Steps** (detailed actions)
+- action 1: what to check and how
+- action 2: specific commands or queries
 """
 
     @staticmethod
@@ -82,16 +85,16 @@ Format:
                     # Large dataset: aggregated summary only
                     lines.append(f"**Total rows**: {row_count}")
                     
-                    # Show first 3 as compact sample
+                    # Show first 5 as compact sample
                     columns = list(query_result.rows[0].keys())
                     lines.append(f"**Columns**: {', '.join(columns)}")
-                    lines.append(f"**Sample (first 3)**:")
+                    lines.append(f"**Sample (first 5)**:")
                     
-                    for i, row in enumerate(query_result.rows[:3], 1):
+                    for i, row in enumerate(query_result.rows[:5], 1):
                         values = [f"{k}={str(v)[:20]}" for k, v in row.items()]
                         lines.append(f"  {i}. {'; '.join(values)}")
                     
-                    lines.append(f"_(+{row_count - 3} more rows)_")
+                    lines.append(f"_(+{row_count - 5} more rows)_")
                 else:
                     # Small dataset: show all compactly
                     columns = list(query_result.rows[0].keys())

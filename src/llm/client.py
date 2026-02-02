@@ -145,7 +145,7 @@ class OllamaClient:
 
             # OPTIMIZATION: Aggressive performance tuning
             # num_ctx: Minimal context window
-            # num_predict: Short responses only
+            # num_predict: Increased for detailed responses
             # repeat_penalty: Avoid repetition (faster generation)
             # top_k: Limit vocabulary sampling (faster)
             response = requests.post(
@@ -158,7 +158,7 @@ class OllamaClient:
                     "top_p": 0.9,
                     "options": {
                         "num_ctx": 1536,      # Further reduced context (was 2048)
-                        "num_predict": 200,   # Max 200 tokens (was 250)
+                        "num_predict": 400,   # Increased for detailed analysis (was 200)
                         "num_thread": 8,      # Use 8 CPU threads
                         "repeat_penalty": 1.2,  # Penalize repetition
                         "top_k": 40,          # Limit token sampling
