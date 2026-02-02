@@ -142,6 +142,7 @@ class OllamaClient:
 
         try:
             logger.debug(f"Calling Ollama: {self.model_name} ({self.timeout_seconds}s timeout)")
+            logger.info(f"Prompt size: {len(full_prompt)} chars")
 
             # OPTIMIZATION: Aggressive performance tuning
             # num_ctx: Minimal context window
@@ -158,7 +159,7 @@ class OllamaClient:
                     "top_p": 0.9,
                     "options": {
                         "num_ctx": 1536,      # Further reduced context (was 2048)
-                        "num_predict": 300,   # Balanced: detailed but fast (was 400)
+                        "num_predict": 350,   # Increased for complete responses (was 300)
                         "num_thread": 8,      # Use 8 CPU threads
                         "repeat_penalty": 1.2,  # Penalize repetition
                         "top_k": 40,          # Limit token sampling
@@ -186,7 +187,8 @@ class OllamaClient:
                     )
 
                 # DEBUG: Log raw Ollama response
-                logger.debug(f"Raw Ollama response ({len(raw_response)} chars): {raw_response[:500]}...")
+                logger.info(f"Raw Ollama response: {len(raw_response)} chars")
+                logger.debug(f"Response preview: {raw_response[:800]}...")
 
                 # Parse response into contract
                 parsed = self._parse_response(raw_response)
