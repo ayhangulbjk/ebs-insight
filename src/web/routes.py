@@ -466,9 +466,20 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
             if exec_result.query_results and exec_result.query_results[0].rows:
                 sample_objects = []
                 for row in exec_result.query_results[0].rows[:10]:
-                    obj_name = row.get('OBJECT_NAME') or row.get('OWNER') + '.' + row.get('OBJECT_NAME', '')
-                    if obj_name:
-                        sample_objects.append(obj_name)
+                    owner = row.get('OWNER') or ''
+                    obj = row.get('OBJECT_NAME') or ''
+                    
+                    # Build object name safely
+                    if owner and obj:
+                        obj_name = f"{owner}.{obj}"
+                    elif obj:
+                        obj_name = obj
+                    elif owner:
+                        obj_name = owner
+                    else:
+                        continue  # Skip rows without meaningful data
+                    
+                    sample_objects.append(obj_name)
                 
                 if sample_objects:
                     bullets.append(f"İlk {len(sample_objects)} obje: {', '.join(sample_objects)}")
