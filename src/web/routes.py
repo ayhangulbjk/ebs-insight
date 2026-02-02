@@ -462,10 +462,10 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
         else:
             bullets.append(f"⚠️ Sistemde **{total_rows} invalid obje** bulunuyor.")
             
-            # Extract object names from first query result
+            # Extract object names and format as table
             if exec_result.query_results and exec_result.query_results[0].rows:
-                sample_objects = []
-                for idx, row in enumerate(exec_result.query_results[0].rows[:10]):
+                objects_data = []
+                for idx, row in enumerate(exec_result.query_results[0].rows[:15]):  # Show first 15
                     # Try multiple column name variations (case-insensitive)
                     owner = (row.get('OWNER') or row.get('owner') or 
                             row.get('Owner') or '').strip()
@@ -474,20 +474,32 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
                     obj_type = (row.get('OBJECT_TYPE') or row.get('object_type') or 
                                row.get('Object_Type') or '').strip()
                     
-                    # Build display name
-                    if obj:
-                        if obj_type:
-                            display_name = f"{obj} ({obj_type})"
-                        else:
-                            display_name = obj
-                        sample_objects.append(display_name)
+                    if obj:  # Only add if object name exists
+                        objects_data.append({
+                            'owner': owner or '-',
+                            'name': obj,
+                            'type': obj_type or '-'
+                        })
                 
-                if sample_objects:
-                    # Show objects in a clean list format
-                    objects_str = ", ".join(sample_objects[:5])  # First 5 for readability
-                    if len(sample_objects) > 5:
-                        objects_str += f" ... (+{len(sample_objects)-5} diğer)"
-                    bullets.append(f"📋 Örnek objeler: {objects_str}")
+                if objects_data:
+                    # Add table header
+                    bullets.append("")
+                    bullets.append("**İlk {} Invalid Obje:**".format(min(15, len(objects_data))))
+                    bullets.append("")
+                    bullets.append("| # | Owner | Object Name | Type |")
+                    bullets.append("|---|-------|-------------|------|")
+                    
+                    # Add table rows
+                    for idx, obj in enumerate(objects_data[:10], 1):  # Show first 10 in table
+                        bullets.append(f"| {idx} | {obj['owner']} | {obj['name']} | {obj['type']} |")
+                    
+                    # Show summary if more objects exist
+                    if len(objects_data) > 10:
+                        bullets.append("")
+                        bullets.append(f"_... ve {len(objects_data) - 10} obje daha (toplam: {total_rows})_")
+                    elif total_rows > len(objects_data):
+                        bullets.append("")
+                        bullets.append(f"_... ve {total_rows - len(objects_data)} obje daha (toplam: {total_rows})_")
                 else:
                     # Fallback if extraction fails
                     bullets.append("⚠️ Obje detayları alınamadı (veri formatı beklenenden farklı)")

@@ -33,7 +33,7 @@
       "query_id": "invalid_objects_main",
       "sql": "SELECT OWNER, OBJECT_NAME, OBJECT_TYPE, CREATED, LAST_DDL_TIME, STATUS FROM DBA_OBJECTS WHERE STATUS = 'INVALID' AND OWNER NOT IN ('SYS', 'SYSTEM') ORDER BY CREATED DESC",
       "binds": [],
-      "row_limit": 100,
+      "row_limit": 500,
       "timeout_seconds": 30,
       "result_schema": [
         {

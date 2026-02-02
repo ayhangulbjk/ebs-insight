@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 class OllamaClient:
     """HTTP client for Ollama API."""
 
-    def __init__(self, ollama_url: str, model_name: str, timeout_seconds: int = 20):
+    def __init__(self, ollama_url: str, model_name: str, timeout_seconds: int = 300):
         """
         Args:
             ollama_url: Base URL (e.g., http://127.0.0.1:11434)
             model_name: Model name (e.g., ebs-qwen25chat:latest)
-            timeout_seconds: Request timeout (default 20s per design)
+            timeout_seconds: Request timeout (default 300s for large contexts)
         """
         self.ollama_url = ollama_url.rstrip("/")
         self.model_name = model_name
