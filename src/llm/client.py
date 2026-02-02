@@ -158,7 +158,7 @@ class OllamaClient:
                     "top_p": 0.9,
                     "options": {
                         "num_ctx": 1536,      # Further reduced context (was 2048)
-                        "num_predict": 400,   # Increased for detailed analysis (was 200)
+                        "num_predict": 300,   # Balanced: detailed but fast (was 400)
                         "num_thread": 8,      # Use 8 CPU threads
                         "repeat_penalty": 1.2,  # Penalize repetition
                         "top_k": 40,          # Limit token sampling

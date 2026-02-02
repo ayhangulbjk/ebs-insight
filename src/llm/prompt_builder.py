@@ -17,29 +17,29 @@ class PromptBuilder:
     """Build system and context prompts for Ollama."""
 
     # System prompt (policy + behavior constraints) - OPTIMIZED FOR SPEED
-    SYSTEM_PROMPT = """Oracle EBS R12.2 operations assistant. Analyze DB results.
+    SYSTEM_PROMPT = """Oracle EBS R12.2 ops assistant. Analyze DB results.
 
-Rules:
-- Summarize in 2-5 bullets
-- ALWAYS include sample data in summary (show 3-5 examples)
+RULES:
+- 2-5 bullets with examples
 - Verdict: OK/WARN/CRIT/UNKNOWN
-- Evidence: 2-3 key metrics
-- Provide detailed recommendations: what to check, how to fix
-- Turkish if prompt is Turkish
+- Evidence: key metrics
+- MANDATORY: Provide 3-5 actionable next steps
+- Turkish if prompt Turkish
 
-Format:
+FORMAT:
 **Summary**
-- bullet 1 (with examples)
-- bullet 2
+- 381 geçersiz obje bulundu
+- Örnekler: PKG1 (PACKAGE), PROC2 (PROCEDURE), VIEW3 (VIEW)
 
-**Verdict** [OK|WARN|CRIT|UNKNOWN]
+**Verdict** WARN
 
 **Evidence**
-- metric 1
+- Count: 381
 
-**Next Steps** (detailed actions)
-- action 1: what to check and how
-- action 2: specific commands or queries
+**Next Steps**
+- DBA_ERRORS view'dan hataları inceleyin: SELECT * FROM dba_errors WHERE owner='APPS'
+- Compile edin: ALTER PACKAGE pkg_name COMPILE
+- Bağımlılıkları kontrol edin
 """
 
     @staticmethod
@@ -85,13 +85,14 @@ Format:
                     # Large dataset: aggregated summary only
                     lines.append(f"**Total rows**: {row_count}")
                     
-                    # Show first 5 as compact sample
+                    # Show first 5 as compact sample (NO TRUNCATION for object names)
                     columns = list(query_result.rows[0].keys())
                     lines.append(f"**Columns**: {', '.join(columns)}")
                     lines.append(f"**Sample (first 5)**:")
                     
                     for i, row in enumerate(query_result.rows[:5], 1):
-                        values = [f"{k}={str(v)[:20]}" for k, v in row.items()]
+                        # Show full values (no truncation for clarity)
+                        values = [f"{k}={str(v)}" for k, v in row.items()]
                         lines.append(f"  {i}. {'; '.join(values)}")
                     
                     lines.append(f"_(+{row_count - 5} more rows)_")
