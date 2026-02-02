@@ -453,7 +453,7 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
     ]
     
     # Control-specific summary logic
-    if control and control.control_id == "invalid_objects_001":
+    if control and control.control_id == "invalid_objects":
         # INVALID OBJECTS - show object count + sample list
         if total_rows == 0:
             bullets.append("✓ Sistemde invalid obje bulunmadı.")
@@ -499,7 +499,7 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
     
     next_checks = []
     if control and total_rows > 0:
-        if control.control_id == "invalid_objects_001":
+        if control.control_id == "invalid_objects":
             next_checks = [
                 "Objeleri compile etmeyi deneyin: ALTER PACKAGE/PROCEDURE/... COMPILE",
                 "Hata detayları için DBA_ERRORS view'ını inceleyin",
