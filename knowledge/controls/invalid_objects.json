@@ -71,5 +71,6 @@
   ],
   "safety_classification": "SAFE_READONLY",
   "doc_hint": "Zero invalid objects is the target state. Any invalid objects indicate compilation failures or schema inconsistencies. Investigate the owner schema and object type. May require recompilation or schema refresh.",
-  "analysis_prompt": "Count total invalid objects. Group by object type and owner schema. If any invalid objects found, determine root cause and recommend recompilation or schema fix steps."
+  "analysis_prompt": "Count total invalid objects. Group by object type and owner schema. If any invalid objects found, determine root cause and recommend recompilation or schema fix steps.",
+  "knowledge_file": "invalid_objects.md"
 }

@@ -101,6 +101,10 @@ class ControlDefinition(BaseModel):
         ...,
         description="Instructions for LLM on how to interpret and summarize results",
     )
+    knowledge_file: Optional[str] = Field(
+        default=None,
+        description="Optional markdown file with domain knowledge (e.g., 'invalid_objects.md')",
+    )
     safety_classification: SafetyClassification = Field(
         default=SafetyClassification.SAFE_READONLY,
         description="Safety classification per AGENTS.md § 4.3",

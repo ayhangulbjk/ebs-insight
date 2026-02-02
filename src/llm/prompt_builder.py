@@ -56,7 +56,7 @@ OUTPUT STRUCTURE:
         control: ControlDefinition, execution_result: ControlExecutionResult
     ) -> str:
         """
-        Build context prompt from control metadata + DB results.
+        Build context prompt from control metadata + DB results + knowledge file (if exists).
 
         Args:
             control: ControlDefinition with metadata
@@ -71,7 +71,27 @@ OUTPUT STRUCTURE:
         lines.append(f"**Control**: {control.title}")
         lines.append(f"**Task**: {control.doc_hint}")
         lines.append("")
-
+        
+        # Load domain knowledge if specified
+        if control.knowledge_file:
+            try:
+                import os
+                knowledge_path = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                    "knowledge", "controls", control.knowledge_file
+                )
+                if os.path.exists(knowledge_path):
+                    with open(knowledge_path, 'r', encoding='utf-8') as f:
+                        knowledge_content = f.read()
+                    lines.append("**Domain Knowledge:**")
+                    lines.append(knowledge_content)
+                    lines.append("")
+                    logger.info(f"Loaded knowledge file: {control.knowledge_file} ({len(knowledge_content)} chars)")
+                else:
+                    logger.warning(f"Knowledge file not found: {knowledge_path}")
+            except Exception as e:
+                logger.error(f"Failed to load knowledge file {control.knowledge_file}: {e}")
+        
         # Query results (compact format)
         lines.append("**Data:**")
         lines.append("")
