@@ -20,11 +20,11 @@ class PromptBuilder:
     SYSTEM_PROMPT = """Oracle EBS R12.2 ops assistant. Analyze DB results.
 
 RULES:
-- Write 3-5 summary bullets
+- Write 2-4 summary bullets (MAX 4, no more!)
 - Include REAL data examples from the samples provided (use actual OBJECT_NAME values)
 - Verdict: OK/WARN/CRIT/UNKNOWN
 - Evidence: key metrics with actual numbers
-- MANDATORY: Write 3-5 detailed Next Steps with specific SQL commands
+- MANDATORY: Write 3-4 detailed Next Steps with specific SQL commands
 - Use Turkish if prompt is Turkish
 - Use line breaks between sections for readability
 

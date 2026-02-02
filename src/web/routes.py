@@ -283,6 +283,15 @@ def register_routes(app):
                     f"(intent={intent_time_ms:.0f}ms, db={db_time_ms:.0f}ms, ollama={ollama_time_ms:.0f}ms)"
                 )
 
+                # Prepare raw data for UI details panel (max 100 rows)
+                raw_data = []
+                if exec_result.query_results:
+                    for qr in exec_result.query_results:
+                        if qr.rows:
+                            raw_data.extend(qr.rows[:100])  # Max 100 rows total
+                            if len(raw_data) >= 100:
+                                break
+                
                 return jsonify({
                     "request_id": request_id,
                     "session_id": session_id,
@@ -291,6 +300,8 @@ def register_routes(app):
                     "selected_control": router_decision.selected_control_id,
                     "response": response_text,
                     "verdict": summary_response.verdict.value if hasattr(summary_response.verdict, 'value') else str(summary_response.verdict),
+                    "raw_data": raw_data[:100],  # First 100 rows for details panel
+                    "raw_data_count": sum(qr.row_count for qr in exec_result.query_results if not qr.error),
                     "execution_time_ms": execution_time_ms,
                     "db_time_ms": db_time_ms,
                     "ollama_time_ms": ollama_time_ms,

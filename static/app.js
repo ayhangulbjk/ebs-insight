@@ -95,8 +95,8 @@ async function sendMessage() {
         const responseTimeEl = document.getElementById("response-time");
         responseTimeEl.textContent = `⏱ ${duration}ms`;
         
-        // Update details panel if available
-        if (data.details) {
+        // Update details panel with raw data
+        if (data.raw_data && data.raw_data.length > 0) {
             updateDetailsPanel(data);
         }
         
@@ -200,7 +200,8 @@ function getVerdictEmoji(verdict) {
 
 function updateDetailsPanel(data) {
     const content = document.getElementById("details-content");
-    content.innerHTML = `
+    
+    let html = `
         <h4>Request Metadata</h4>
         <ul>
             <li><strong>Request ID:</strong> <code>${data.request_id}</code></li>
@@ -209,6 +210,37 @@ function updateDetailsPanel(data) {
             <li><strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString("tr-TR")}</li>
         </ul>
     `;
+    
+    // Add raw data table if available
+    if (data.raw_data && data.raw_data.length > 0) {
+        html += `
+            <h4>Ham Veri (${data.raw_data.length} / ${data.raw_data_count || data.raw_data.length} satır)</h4>
+            <div class="raw-data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            ${Object.keys(data.raw_data[0]).map(key => `<th>${key}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.raw_data.map(row => `
+                            <tr>
+                                ${Object.values(row).map(val => `<td>${val || '-'}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = html;
+    
+    // Auto-open details panel when data is available
+    const panel = document.getElementById("details-panel");
+    if (data.raw_data && data.raw_data.length > 0) {
+        panel.classList.remove("hidden");
+    }
 }
 
 function clearChat() {
