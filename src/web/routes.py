@@ -465,31 +465,14 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
     
     # Control-specific summary logic
     if control and control.control_id == "invalid_objects":
-        # INVALID OBJECTS - show object count + sample list
+        # INVALID OBJECTS - show object count only (examples in details panel)
         if total_rows == 0:
             bullets.append("✓ Sistemde invalid obje bulunmadı.")
             verdict = LLMOutputVerdictType.OK
             evidence = ["Invalid object count: 0"]
         else:
             bullets.append(f"⚠️ Sistemde **{total_rows} invalid obje** bulunuyor.")
-            
-            # Extract and format top objects as compact list (not table in bullets)
-            if exec_result.query_results and exec_result.query_results[0].rows:
-                sample_objects = []
-                for row in exec_result.query_results[0].rows[:5]:  # First 5 for summary
-                    obj = (row.get('OBJECT_NAME') or row.get('object_name') or '').strip()
-                    obj_type = (row.get('OBJECT_TYPE') or row.get('object_type') or '').strip()
-                    
-                    if obj:
-                        if obj_type:
-                            sample_objects.append(f"{obj} ({obj_type})")
-                        else:
-                            sample_objects.append(obj)
-                
-                if sample_objects:
-                    bullets.append(f"📋 Örnek objeler: {', '.join(sample_objects)}")
-                    if total_rows > 5:
-                        bullets.append(f"_... ve {total_rows - 5} obje daha_")
+            bullets.append("📋 Detay listesi aşağıdaki **Detaylar** panelinde gösterilmektedir.")
             
             verdict = LLMOutputVerdictType.WARN if total_rows < 50 else LLMOutputVerdictType.CRIT
             evidence = [
@@ -507,7 +490,7 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
             verdict = LLMOutputVerdictType.UNKNOWN
             evidence = [f"Total rows: {total_rows}"]
     
-    # Add fallback notice (no truncation message - already implicit in summary)
+    # Add structured fallback notice
     details = "ℹ️ Not: Ollama zaman aşımına uğradı. Bu özet doğrudan veritabanı sonuçlarından oluşturulmuştur."
     
     next_checks = []
