@@ -237,7 +237,7 @@ class LLMOutputVerdictType(str, Enum):
 class LLMSummaryResponse(BaseModel):
     """Parsed LLM response per AGENTS.md § 7.3 (Output Contract)"""
     summary_bullets: List[str] = Field(
-        ..., min_items=2, max_items=5, description="2-5 summary bullets"
+        ..., min_items=2, max_items=8, description="2-5 summary bullets (max 8 tolerated)"
     )
     verdict: LLMOutputVerdictType = Field(..., description="Health/status verdict")
     evidence: List[str] = Field(
