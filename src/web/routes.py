@@ -462,47 +462,23 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
         else:
             bullets.append(f"⚠️ Sistemde **{total_rows} invalid obje** bulunuyor.")
             
-            # Extract object names and format as table
+            # Extract and format top objects as compact list (not table in bullets)
             if exec_result.query_results and exec_result.query_results[0].rows:
-                objects_data = []
-                for idx, row in enumerate(exec_result.query_results[0].rows[:15]):  # Show first 15
-                    # Try multiple column name variations (case-insensitive)
-                    owner = (row.get('OWNER') or row.get('owner') or 
-                            row.get('Owner') or '').strip()
-                    obj = (row.get('OBJECT_NAME') or row.get('object_name') or 
-                          row.get('Object_Name') or '').strip()
-                    obj_type = (row.get('OBJECT_TYPE') or row.get('object_type') or 
-                               row.get('Object_Type') or '').strip()
+                sample_objects = []
+                for row in exec_result.query_results[0].rows[:5]:  # First 5 for summary
+                    obj = (row.get('OBJECT_NAME') or row.get('object_name') or '').strip()
+                    obj_type = (row.get('OBJECT_TYPE') or row.get('object_type') or '').strip()
                     
-                    if obj:  # Only add if object name exists
-                        objects_data.append({
-                            'owner': owner or '-',
-                            'name': obj,
-                            'type': obj_type or '-'
-                        })
+                    if obj:
+                        if obj_type:
+                            sample_objects.append(f"{obj} ({obj_type})")
+                        else:
+                            sample_objects.append(obj)
                 
-                if objects_data:
-                    # Add table header
-                    bullets.append("")
-                    bullets.append("**İlk {} Invalid Obje:**".format(min(15, len(objects_data))))
-                    bullets.append("")
-                    bullets.append("| # | Owner | Object Name | Type |")
-                    bullets.append("|---|-------|-------------|------|")
-                    
-                    # Add table rows
-                    for idx, obj in enumerate(objects_data[:10], 1):  # Show first 10 in table
-                        bullets.append(f"| {idx} | {obj['owner']} | {obj['name']} | {obj['type']} |")
-                    
-                    # Show summary if more objects exist
-                    if len(objects_data) > 10:
-                        bullets.append("")
-                        bullets.append(f"_... ve {len(objects_data) - 10} obje daha (toplam: {total_rows})_")
-                    elif total_rows > len(objects_data):
-                        bullets.append("")
-                        bullets.append(f"_... ve {total_rows - len(objects_data)} obje daha (toplam: {total_rows})_")
-                else:
-                    # Fallback if extraction fails
-                    bullets.append("⚠️ Obje detayları alınamadı (veri formatı beklenenden farklı)")
+                if sample_objects:
+                    bullets.append(f"📋 Örnek objeler: {', '.join(sample_objects)}")
+                    if total_rows > 5:
+                        bullets.append(f"_... ve {total_rows - 5} obje daha_")
             
             verdict = LLMOutputVerdictType.WARN if total_rows < 50 else LLMOutputVerdictType.CRIT
             evidence = [
@@ -520,11 +496,7 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
             verdict = LLMOutputVerdictType.UNKNOWN
             evidence = [f"Total rows: {total_rows}"]
     
-    # Show truncation info if applicable
-    if any_truncated and displayed_rows < total_rows:
-        bullets.append(f"ℹ️ Not: Sonuçlar güvenlik limiti nedeniyle {displayed_rows} satıra kısaltıldı (toplam: {total_rows})")
-    
-    # Add fallback notice
+    # Add fallback notice (no truncation message - already implicit in summary)
     details = "ℹ️ Not: Ollama zaman aşımına uğradı. Bu özet doğrudan veritabanı sonuçlarından oluşturulmuştur."
     
     next_checks = []

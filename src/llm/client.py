@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 class OllamaClient:
     """HTTP client for Ollama API."""
 
-    def __init__(self, ollama_url: str, model_name: str, timeout_seconds: int = 300):
+    def __init__(self, ollama_url: str, model_name: str, timeout_seconds: int = 60):
         """
         Args:
             ollama_url: Base URL (e.g., http://127.0.0.1:11434)
             model_name: Model name (e.g., ebs-qwen25chat:latest)
-            timeout_seconds: Request timeout (default 300s for large contexts)
+            timeout_seconds: Request timeout (default 60s, optimized for fast inference)
         """
         self.ollama_url = ollama_url.rstrip("/")
         self.model_name = model_name
@@ -76,6 +76,7 @@ class OllamaClient:
         try:
             logger.debug(f"Calling Ollama for chat (non-EBS): {self.model_name}")
             
+            # OPTIMIZATION: Fast params for chat (shorter, faster responses)
             response = requests.post(
                 self.generate_endpoint,
                 json={
@@ -84,6 +85,12 @@ class OllamaClient:
                     "stream": False,
                     "temperature": 0.7,  # Higher temperature for conversational responses
                     "top_p": 0.95,
+                    "options": {
+                        "num_ctx": 1024,      # Smaller context for chat (very fast)
+                        "num_predict": 100,   # Short chat responses
+                        "num_thread": 8,
+                    },
+                    "keep_alive": "30m"
                 },
                 timeout=self.timeout_seconds,
             )
@@ -136,6 +143,10 @@ class OllamaClient:
         try:
             logger.debug(f"Calling Ollama: {self.model_name} ({self.timeout_seconds}s timeout)")
 
+            # OPTIMIZATION: Tune parameters for speed and conciseness
+            # num_ctx: Context window size (smaller = faster)
+            # num_predict: Max output tokens (limit response length)
+            # keep_alive: Keep model in RAM for faster subsequent calls
             response = requests.post(
                 self.generate_endpoint,
                 json={
@@ -144,6 +155,12 @@ class OllamaClient:
                     "stream": False,
                     "temperature": 0.3,  # Low temperature for deterministic summaries
                     "top_p": 0.9,
+                    "options": {
+                        "num_ctx": 2048,      # Reduced context window (default: 4096)
+                        "num_predict": 250,   # Max 250 tokens output (concise responses)
+                        "num_thread": 8,      # Use 8 CPU threads for inference
+                    },
+                    "keep_alive": "30m"  # Keep model loaded in RAM for 30 minutes
                 },
                 timeout=self.timeout_seconds,
             )

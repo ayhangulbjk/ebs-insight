@@ -109,15 +109,33 @@ Output Format:
             elif not query_result.rows:
                 lines.append("(No rows)")
             else:
-                # Format as markdown table
-                if query_result.rows:
-                    # Get column names from first row
+                # OPTIMIZATION: Send aggregated summary instead of full rows to prevent Ollama timeout
+                row_count = query_result.row_count
+                
+                if row_count > 20:
+                    # For large result sets, send aggregated data only
+                    lines.append(f"**Total Rows**: {row_count}")
+                    lines.append("")
+                    
+                    # Show top 5 rows as sample
+                    columns = list(query_result.rows[0].keys())
+                    lines.append("**Sample (First 5):**")
+                    lines.append("")
+                    lines.append("| " + " | ".join(columns) + " |")
+                    lines.append("|" + "|".join(["---"] * len(columns)) + "|")
+                    
+                    for row in query_result.rows[:5]:
+                        values = [str(row.get(col, ""))[:30] for col in columns]  # Truncate long values
+                        lines.append("| " + " | ".join(values) + " |")
+                    
+                    lines.append(f"\n_Showing 5 of {row_count} total rows. Full list truncated for performance._")
+                else:
+                    # For smaller result sets, show all rows
                     columns = list(query_result.rows[0].keys())
                     lines.append("")
                     lines.append("| " + " | ".join(columns) + " |")
                     lines.append("|" + "|".join(["---"] * len(columns)) + "|")
 
-                    # Add rows (limit to 10 for Ollama prompt to prevent timeout)
                     display_limit = min(10, len(query_result.rows))
                     for row in query_result.rows[:display_limit]:
                         values = [str(row.get(col, "")) for col in columns]
