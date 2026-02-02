@@ -117,14 +117,17 @@ Output Format:
                     lines.append("| " + " | ".join(columns) + " |")
                     lines.append("|" + "|".join(["---"] * len(columns)) + "|")
 
-                    # Add rows (limit to 10 for readability)
-                    for row in query_result.rows[:10]:
+                    # Add rows (limit to 10 for Ollama prompt to prevent timeout)
+                    display_limit = min(10, len(query_result.rows))
+                    for row in query_result.rows[:display_limit]:
                         values = [str(row.get(col, "")) for col in columns]
                         lines.append("| " + " | ".join(values) + " |")
 
                     if query_result.truncated:
-                        lines.append(f"\n_... ({query_result.row_count} total rows, showing 10)_")
-                    elif query_result.row_count > 0:
+                        lines.append(f"\n_... ({query_result.row_count} total rows, showing {display_limit})_")
+                    elif query_result.row_count > display_limit:
+                        lines.append(f"\n_({query_result.row_count} total rows, showing {display_limit})_")
+                    else:
                         lines.append(f"\n_({query_result.row_count} total rows)_")
 
             lines.append("")

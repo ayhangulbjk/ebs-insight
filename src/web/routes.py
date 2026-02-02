@@ -260,7 +260,7 @@ def register_routes(app):
                 
                 if not summary_response:
                     logger.warning(f"[{request_id}] Ollama summarization failed/empty, returning fallback summary")
-                    summary_response = _generate_fallback_summary(exec_result)
+                    summary_response = _generate_fallback_summary(exec_result, control)
                 else:
                     logger.info(
                         f"[{request_id}] Ollama response: verdict={summary_response.verdict}, "
@@ -290,7 +290,7 @@ def register_routes(app):
                     "intent_confidence": intent_result.confidence,
                     "selected_control": router_decision.selected_control_id,
                     "response": response_text,
-                    "verdict": summary_response.verdict,
+                    "verdict": summary_response.verdict.value if hasattr(summary_response.verdict, 'value') else str(summary_response.verdict),
                     "execution_time_ms": execution_time_ms,
                     "db_time_ms": db_time_ms,
                     "ollama_time_ms": ollama_time_ms,
@@ -423,8 +423,20 @@ def _generate_chit_chat_response(prompt: str) -> str:
         return "Bana EBS sistemi hakkında sorularınızı sorun. Concurrent Manager, Invalid Objects, ADOP durumu veya Workflow hakkında bilgi almak isteyebilirsiniz."
 
 
-def _generate_fallback_summary(exec_result):
-    """Generate fallback summary if Ollama fails"""
+def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None):
+    """
+    Generate intelligent fallback summary if Ollama fails.
+    
+    Per AGENTS.md § 9: When Ollama fails, return structured summary from DB results.
+    Control-specific logic for known diagnostic types.
+    
+    Args:
+        exec_result: ControlExecutionResult with DB data
+        control: Optional ControlDefinition for control-specific formatting
+    
+    Returns:
+        LLMSummaryResponse with structured fallback
+    """
     from src.controls.schema import LLMSummaryResponse, LLMOutputVerdictType
     from src.db.sanitizer import Sanitizer
     
@@ -435,41 +447,100 @@ def _generate_fallback_summary(exec_result):
     # Check if rows were truncated
     any_truncated = any(q.truncated for q in exec_result.query_results)
     
+    # Base bullets
     bullets = [
         f"{len(exec_result.query_results)} sorgu başarıyla çalıştırıldı.",
-        f"Toplam {total_rows} sonuç alındı (gösterilen: {displayed_rows}/{Sanitizer.MAX_ROWS} max).",
     ]
+    
+    # Control-specific summary logic
+    if control and control.control_id == "invalid_objects_001":
+        # INVALID OBJECTS - show object count + sample list
+        if total_rows == 0:
+            bullets.append("✓ Sistemde invalid obje bulunmadı.")
+            verdict = LLMOutputVerdictType.OK
+            evidence = ["Invalid object count: 0"]
+        else:
+            bullets.append(f"⚠️ Sistemde **{total_rows} invalid obje** bulunuyor.")
+            
+            # Extract object names from first query result
+            if exec_result.query_results and exec_result.query_results[0].rows:
+                sample_objects = []
+                for row in exec_result.query_results[0].rows[:10]:
+                    obj_name = row.get('OBJECT_NAME') or row.get('OWNER') + '.' + row.get('OBJECT_NAME', '')
+                    if obj_name:
+                        sample_objects.append(obj_name)
+                
+                if sample_objects:
+                    bullets.append(f"İlk {len(sample_objects)} obje: {', '.join(sample_objects)}")
+                    if total_rows > len(sample_objects):
+                        bullets.append(f"(Toplam {total_rows} objeden {len(sample_objects)} tanesi gösteriliyor)")
+            
+            verdict = LLMOutputVerdictType.WARN if total_rows < 50 else LLMOutputVerdictType.CRIT
+            evidence = [
+                f"Invalid object count: {total_rows}",
+                "Objeler compile hatası nedeniyle kullanılamıyor"
+            ]
+    else:
+        # Generic fallback for other controls
+        if total_rows == 0:
+            bullets.append("Sorgu sonucu boş döndü.")
+            verdict = LLMOutputVerdictType.UNKNOWN
+            evidence = ["No data returned"]
+        else:
+            bullets.append(f"Toplam **{total_rows} sonuç** alındı (gösterilen: {displayed_rows}).")
+            verdict = LLMOutputVerdictType.UNKNOWN
+            evidence = [f"Total rows: {total_rows}"]
     
     if any_truncated:
         bullets.append(f"⚠️ Bazı sonuçlar {Sanitizer.MAX_ROWS} satır limitinden dolayı kısaltıldı.")
     
+    # Add fallback notice
+    details = "ℹ️ Ollama özetleme başarısız oldu. Yukarıdaki özet doğrudan veritabanı sonuçlarından oluşturulmuştur."
+    
+    next_checks = []
+    if control and total_rows > 0:
+        if control.control_id == "invalid_objects_001":
+            next_checks = [
+                "Objeleri compile etmeyi deneyin: ALTER PACKAGE/PROCEDURE/... COMPILE",
+                "Hata detayları için DBA_ERRORS view'ını inceleyin",
+                "Olası sebep: eksik grant, eksik synonym, bağımlılık problemi"
+            ]
+    
     return LLMSummaryResponse(
         summary_bullets=bullets,
-        verdict=LLMOutputVerdictType.UNKNOWN,
-        evidence=[
-            "Ollama özetleme başarısız, ham veriler yukarıda gösterilmektedir."
-        ]
+        verdict=verdict,
+        evidence=evidence,
+        details=details,
+        next_checks=next_checks if next_checks else None
     )
 
 
 def _format_response(summary_response, request_id: str = None) -> str:
-    """Format LLMSummaryResponse into readable markdown"""
+    """
+    Format LLMSummaryResponse into readable markdown.
+    
+    Per AGENTS.md § 7.3: Output must be concise, actionable, and user-friendly.
+    Converts verdict enum to Turkish display text.
+    """
     lines = []
 
-    # Request ID if provided
+    # Request ID if provided (debug mode only)
     if request_id:
-        lines.append(f"Request ID: {request_id}")
+        lines.append(f"_Request ID: {request_id}_\n")
 
-    # Verdict as emoji
-    verdict_emoji = {
-        "OK": "✓",
-        "WARN": "⚠️",
-        "CRIT": "🔴",
-        "UNKNOWN": "❓"
+    # Verdict as emoji + Turkish label
+    verdict_display = {
+        "OK": ("✓", "Normal"),
+        "WARN": ("⚠️", "Dikkat Gerekli"),
+        "CRIT": ("🔴", "Kritik Durum"),
+        "UNKNOWN": ("❓", "Bilinmeyen")
     }
-    emoji = verdict_emoji.get(summary_response.verdict, "❓")
+    
+    # Handle both enum and string verdict
+    verdict_key = summary_response.verdict.value if hasattr(summary_response.verdict, 'value') else str(summary_response.verdict)
+    emoji, label = verdict_display.get(verdict_key, ("❓", "Bilinmeyen"))
 
-    lines.append(f"**{emoji} {summary_response.verdict}**\n")
+    lines.append(f"### {emoji} Durum: {label}\n")
 
     # Summary bullets
     for bullet in summary_response.summary_bullets:
@@ -479,20 +550,20 @@ def _format_response(summary_response, request_id: str = None) -> str:
 
     # Evidence
     if summary_response.evidence:
-        lines.append("**Kanıtlar:**")
+        lines.append("**📊 Kanıtlar:**")
         for evidence in summary_response.evidence:
             lines.append(f"- {evidence}")
         lines.append("")
 
     # Details if present
     if summary_response.details:
-        lines.append("**Detaylar:**")
+        lines.append("**📝 Detaylar:**")
         lines.append(summary_response.details)
         lines.append("")
     
     # Next steps if present
     if summary_response.next_checks:
-        lines.append("**Önerilen Sonraki Adımlar:**")
+        lines.append("**🔧 Önerilen Sonraki Adımlar:**")
         for step in summary_response.next_checks:
             lines.append(f"- {step}")
     

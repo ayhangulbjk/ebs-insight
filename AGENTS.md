@@ -324,6 +324,7 @@ Decision trail MUST be reproducible:
 - Sanitization/redaction: golden test cases
 - Output contract parser/validator
 - **NEVER** run application in this environment. Because `.env` file is not configured in this environment. Instead of running the application, you MUST test changes with manual scripts.
+- Do not run tests every time since this environment lacks DB access and Ollama. Instead, design tests to be executable on the production server.
 
 ### 10.2 Integration Smoke Tests
 
