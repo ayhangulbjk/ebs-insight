@@ -16,42 +16,28 @@ logger = logging.getLogger(__name__)
 class PromptBuilder:
     """Build system and context prompts for Ollama."""
 
-    # System prompt (policy + behavior constraints)
-    SYSTEM_PROMPT = """You are an Oracle EBS R12.2 operations assistant.
+    # System prompt (policy + behavior constraints) - OPTIMIZED FOR SPEED
+    SYSTEM_PROMPT = """Oracle EBS R12.2 operations assistant. Analyze DB results.
 
-Your role:
-- Analyze provided database results
-- Summarize findings in 2-5 bullet points
-- Assign a health verdict: OK (normal), WARN (attention needed), CRIT (critical issue), UNKNOWN (insufficient data)
-- Provide evidence (key metrics, row counts)
-- Suggest next checks if confidence is low
+Rules:
+- Summarize in 2-5 bullets
+- Verdict: OK/WARN/CRIT/UNKNOWN
+- Evidence: 2-3 key metrics
+- Turkish if prompt is Turkish
 
-Critical Rules:
-- ONLY summarize from provided data. DO NOT invent data.
-- If data is missing or inconclusive, say so and suggest next diagnostic steps.
-- Keep summary concise and actionable.
-- Use Turkish labels if original prompt was Turkish, otherwise English.
-- For SENSITIVE data marked [REDACTED]: acknowledge data was protected but do not speculate.
-
-Output Format:
----
+Format:
 **Summary**
 - bullet 1
 - bullet 2
-- [up to 5 bullets]
 
-**Verdict** [OK | WARN | CRIT | UNKNOWN]
+**Verdict** [OK|WARN|CRIT|UNKNOWN]
 
 **Evidence**
-- key metric with value
-- [2-3 evidence points]
+- metric 1
 
-**Details** (optional, keep compact)
-[relevant details if space permits]
-
-**Next Steps** (optional, suggest if needed)
-- next diagnostic check if low confidence
----"""
+**Next Steps** (optional)
+- action 1
+"""
 
     @staticmethod
     def build_system_prompt() -> str:
@@ -74,89 +60,53 @@ Output Format:
         """
         lines = []
 
-        # Control metadata
-        lines.append(f"**Control**: {control.title} (v{control.version})")
-        lines.append(f"**Intent**: {control.intent}")
-        lines.append(f"**Description**: {control.description}")
+        # Minimal control metadata (OPTIMIZED)
+        lines.append(f"**Control**: {control.title}")
+        lines.append(f"**Task**: {control.doc_hint}")
         lines.append("")
 
-        # What to look for
-        lines.append("**What to Look For**")
-        lines.append(control.doc_hint)
-        lines.append("")
-
-        # Analysis guidance
-        if control.analysis_prompt:
-            lines.append("**Analysis Focus**")
-            lines.append(control.analysis_prompt)
-            lines.append("")
-
-        # Query results
-        lines.append("**Database Results**")
+        # Query results (compact format)
+        lines.append("**Data:**")
         lines.append("")
 
         for idx, query_result in enumerate(execution_result.query_results, 1):
-            query_def = next(
-                (q for q in control.queries if q.query_id == query_result.query_id),
-                None,
-            )
-            query_name = query_def.query_id if query_def else f"Query_{idx}"
-
-            lines.append(f"_Query {idx}: {query_name}_")
-
             if query_result.error:
-                lines.append(f"**Error**: {query_result.error}")
+                lines.append(f"Error: {query_result.error}")
             elif not query_result.rows:
-                lines.append("(No rows)")
+                lines.append("No data")
             else:
-                # OPTIMIZATION: Send aggregated summary instead of full rows to prevent Ollama timeout
+                # OPTIMIZATION: Minimal data format
                 row_count = query_result.row_count
                 
-                if row_count > 20:
-                    # For large result sets, send aggregated data only
-                    lines.append(f"**Total Rows**: {row_count}")
-                    lines.append("")
+                if row_count > 10:
+                    # Large dataset: aggregated summary only
+                    lines.append(f"**Total rows**: {row_count}")
                     
-                    # Show top 5 rows as sample
+                    # Show first 3 as compact sample
                     columns = list(query_result.rows[0].keys())
-                    lines.append("**Sample (First 5):**")
-                    lines.append("")
-                    lines.append("| " + " | ".join(columns) + " |")
-                    lines.append("|" + "|".join(["---"] * len(columns)) + "|")
+                    lines.append(f"**Columns**: {', '.join(columns)}")
+                    lines.append(f"**Sample (first 3)**:")
                     
-                    for row in query_result.rows[:5]:
-                        values = [str(row.get(col, ""))[:30] for col in columns]  # Truncate long values
-                        lines.append("| " + " | ".join(values) + " |")
+                    for i, row in enumerate(query_result.rows[:3], 1):
+                        values = [f"{k}={str(v)[:20]}" for k, v in row.items()]
+                        lines.append(f"  {i}. {'; '.join(values)}")
                     
-                    lines.append(f"\n_Showing 5 of {row_count} total rows. Full list truncated for performance._")
+                    lines.append(f"_(+{row_count - 3} more rows)_")
                 else:
-                    # For smaller result sets, show all rows
+                    # Small dataset: show all compactly
                     columns = list(query_result.rows[0].keys())
-                    lines.append("")
-                    lines.append("| " + " | ".join(columns) + " |")
-                    lines.append("|" + "|".join(["---"] * len(columns)) + "|")
-
-                    display_limit = min(10, len(query_result.rows))
-                    for row in query_result.rows[:display_limit]:
-                        values = [str(row.get(col, "")) for col in columns]
-                        lines.append("| " + " | ".join(values) + " |")
-
-                    if query_result.truncated:
-                        lines.append(f"\n_... ({query_result.row_count} total rows, showing {display_limit})_")
-                    elif query_result.row_count > display_limit:
-                        lines.append(f"\n_({query_result.row_count} total rows, showing {display_limit})_")
-                    else:
-                        lines.append(f"\n_({query_result.row_count} total rows)_")
+                    lines.append(f"**Rows**: {row_count}")
+                    
+                    for i, row in enumerate(query_result.rows, 1):
+                        values = [f"{k}={str(v)[:25]}" for k, v in row.items()]
+                        lines.append(f"  {i}. {'; '.join(values)}")
 
             lines.append("")
 
-        # Execution summary
+        # Minimal execution summary
         if execution_result.has_errors:
-            lines.append("⚠️  **Execution Note**: Some queries encountered errors. See details above.")
-        else:
-            lines.append(f"✓ **Execution**: All {len(execution_result.query_results)} queries completed successfully.")
-
-        lines.append(f"**Total Time**: {execution_result.total_execution_time_ms}ms")
+            lines.append("⚠️ Errors detected")
+        # No success message needed - saves tokens
 
         return "\n".join(lines)
 

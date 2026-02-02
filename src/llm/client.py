@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 class OllamaClient:
     """HTTP client for Ollama API."""
 
-    def __init__(self, ollama_url: str, model_name: str, timeout_seconds: int = 60):
+    def __init__(self, ollama_url: str, model_name: str, timeout_seconds: int = None):
         """
         Args:
             ollama_url: Base URL (e.g., http://127.0.0.1:11434)
             model_name: Model name (e.g., ebs-qwen25chat:latest)
-            timeout_seconds: Request timeout (default 60s, optimized for fast inference)
+            timeout_seconds: Request timeout (None = no timeout, wait indefinitely)
         """
         self.ollama_url = ollama_url.rstrip("/")
         self.model_name = model_name
@@ -143,10 +143,11 @@ class OllamaClient:
         try:
             logger.debug(f"Calling Ollama: {self.model_name} ({self.timeout_seconds}s timeout)")
 
-            # OPTIMIZATION: Tune parameters for speed and conciseness
-            # num_ctx: Context window size (smaller = faster)
-            # num_predict: Max output tokens (limit response length)
-            # keep_alive: Keep model in RAM for faster subsequent calls
+            # OPTIMIZATION: Aggressive performance tuning
+            # num_ctx: Minimal context window
+            # num_predict: Short responses only
+            # repeat_penalty: Avoid repetition (faster generation)
+            # top_k: Limit vocabulary sampling (faster)
             response = requests.post(
                 self.generate_endpoint,
                 json={
@@ -156,11 +157,14 @@ class OllamaClient:
                     "temperature": 0.3,  # Low temperature for deterministic summaries
                     "top_p": 0.9,
                     "options": {
-                        "num_ctx": 2048,      # Reduced context window (default: 4096)
-                        "num_predict": 250,   # Max 250 tokens output (concise responses)
-                        "num_thread": 8,      # Use 8 CPU threads for inference
+                        "num_ctx": 1536,      # Further reduced context (was 2048)
+                        "num_predict": 200,   # Max 200 tokens (was 250)
+                        "num_thread": 8,      # Use 8 CPU threads
+                        "repeat_penalty": 1.2,  # Penalize repetition
+                        "top_k": 40,          # Limit token sampling
+                        "num_batch": 512,     # Batch size for processing
                     },
-                    "keep_alive": "30m"  # Keep model loaded in RAM for 30 minutes
+                    "keep_alive": "30m"  # Keep in RAM
                 },
                 timeout=self.timeout_seconds,
             )
