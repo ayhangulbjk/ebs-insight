@@ -239,7 +239,7 @@ def register_routes(app):
 
                 # ===== STEP 5: Response Formatting =====
                 logger.debug(f"[{request_id}] STEP 5: Formatting response")
-                response_text = _format_response(summary_response)
+                response_text = _format_response(summary_response, request_id)
                 logger.debug(f"[{request_id}] Response formatted: {len(response_text)} chars, verdict={summary_response.verdict}")
                 
                 execution_time_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
@@ -421,10 +421,14 @@ def _generate_fallback_summary(exec_result):
     )
 
 
-def _format_response(summary_response) -> str:
+def _format_response(summary_response, request_id: str = None) -> str:
     """Format LLMSummaryResponse into readable markdown"""
     lines = []
-    
+
+    # Request ID if provided
+    if request_id:
+        lines.append(f"Request ID: {request_id}")
+
     # Verdict as emoji
     verdict_emoji = {
         "OK": "✓",
@@ -433,22 +437,22 @@ def _format_response(summary_response) -> str:
         "UNKNOWN": "❓"
     }
     emoji = verdict_emoji.get(summary_response.verdict, "❓")
-    
+
     lines.append(f"**{emoji} {summary_response.verdict}**\n")
-    
+
     # Summary bullets
     for bullet in summary_response.summary_bullets:
         lines.append(f"- {bullet}")
-    
+
     lines.append("")
-    
+
     # Evidence
     if summary_response.evidence:
         lines.append("**Kanıtlar:**")
         for evidence in summary_response.evidence:
             lines.append(f"- {evidence}")
         lines.append("")
-    
+
     # Details if present
     if summary_response.details:
         lines.append("**Detaylar:**")

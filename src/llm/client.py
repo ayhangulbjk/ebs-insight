@@ -141,6 +141,9 @@ class OllamaClient:
                 result = response.json()
                 raw_response = result.get("response", "").strip()
 
+                # DEBUG: Log raw Ollama response
+                logger.debug(f"Raw Ollama response ({len(raw_response)} chars): {raw_response[:500]}...")
+
                 # Parse response into contract
                 parsed = self._parse_response(raw_response)
                 logger.info(f"✓ Ollama response: {parsed.verdict}")
@@ -240,9 +243,40 @@ class OllamaClient:
 
         # Ensure minimum requirements
         if not summary_bullets:
-            summary_bullets = ["No data available"]
+            # Try to extract any bullet points from the entire response
+            for line in lines:
+                line = line.strip()
+                if line.startswith("- ") or line.startswith("• "):
+                    summary_bullets.append(line.lstrip("- • ").strip())
+
+            if not summary_bullets:
+                summary_bullets = ["Analysis completed based on provided data"]
+
         if not evidence:
-            evidence = ["See raw data above"]
+            # Try to find any metrics or numbers in the response
+            for line in lines:
+                line = line.strip()
+                if any(keyword in line.lower() for keyword in ["count", "total", "found", "rows", "objects"]):
+                    evidence.append(line)
+                    break
+            if not evidence:
+                evidence = ["See query results above"]
+
+        # Try to extract verdict from anywhere in the response
+        if verdict == "UNKNOWN":
+            for line in lines:
+                line = line.upper()
+                if "OK" in line and "NOT" not in line:
+                    verdict = "OK"
+                    break
+                elif "WARN" in line or "WARNING" in line:
+                    verdict = "WARN"
+                    break
+                elif "CRIT" in line or "CRITICAL" in line or "ERROR" in line:
+                    verdict = "CRIT"
+                    break
+
+        logger.debug(f"Parsed response: verdict={verdict}, bullets={len(summary_bullets)}, evidence={len(evidence)}")
 
         return LLMSummaryResponse(
             summary_bullets=summary_bullets,

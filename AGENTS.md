@@ -240,6 +240,7 @@ Ollama MUST be instructed that:
 - It MUST summarize based on provided DB results only
 - It MUST NOT invent DB data
 - If data is missing/inconclusive → say so and propose next control(s)
+- It MUST interpet and explain what is happening based on given data.
 
 ### 7.2 Prompt Structure (Stable)
 
@@ -322,6 +323,7 @@ Decision trail MUST be reproducible:
 - Router scoring functions: deterministic tests
 - Sanitization/redaction: golden test cases
 - Output contract parser/validator
+- **NEVER** run application in this environment. Because `.env` file is not configured in this environment. Instead of running the application, you MUST test changes with manual scripts.
 
 ### 10.2 Integration Smoke Tests
 
