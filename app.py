@@ -68,6 +68,16 @@ def create_app(env_file: str = None) -> Flask:
     setup_middleware(app)
     logger.info("✓ Middleware registered")
 
+    # === 5b. SETUP RATE LIMITING ===
+    # Per SECURITY.MD § 5.3 (Rate Limiting)
+    from src.web.middleware import setup_rate_limiter
+    try:
+        rate_limiter = setup_rate_limiter(app)
+        app.config["rate_limiter"] = rate_limiter
+    except Exception as e:
+        logger.error(f"Rate limiter setup failed: {e}")
+        sys.exit(1)
+
     # === 6. INITIALIZE SYSTEM COMPONENTS ===
     # 6a. Load control catalog
     from src.controls.loader import ControlCatalog

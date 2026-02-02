@@ -59,8 +59,11 @@ class Sanitizer:
         redaction_count = 0
         truncation_count = 0
 
-        # Identify sensitive columns from schema
-        sensitive_columns = cls._identify_sensitive_columns(schema)
+        # Get actual column names from first row (if available)
+        actual_columns = set(rows[0].keys()) if rows else set()
+        
+        # Identify sensitive columns using defense-in-depth
+        sensitive_columns = cls._identify_sensitive_columns(schema, actual_columns)
 
         # Process rows
         for row_idx, row in enumerate(rows):
@@ -102,32 +105,71 @@ class Sanitizer:
         }
 
     @classmethod
-    def _identify_sensitive_columns(cls, schema: List[Dict]) -> set:
+    def _identify_sensitive_columns(cls, schema: List[Dict], actual_columns: set = None) -> set:
         """
-        Identify sensitive columns from result schema.
+        Identify sensitive columns using defense-in-depth approach.
         
-        Per AGENTS.md § 6.2:
-        Only columns explicitly marked as sensitive=true in schema are redacted.
-        If schema doesn't mark it, it's considered safe to return.
+        Strategy (Security Enhancement):
+        1. Schema-first: Respect explicit sensitive=true flags (SSOT)
+        2. Pattern-based fallback: Match against known sensitive patterns
+        3. Log warnings when pattern-matched columns aren't in schema
+        
+        This prevents data leakage if control authors forget to mark columns.
         
         Args:
             schema: Result schema list (from control definition)
                    Expected: [{"name": "col", "sensitive": bool}, ...]
+            actual_columns: Set of actual column names from query result (optional)
             
         Returns:
-            Set of sensitive column names (ONLY those marked sensitive=true)
+            Set of sensitive column names to redact
         """
         sensitive = set()
+        schema_marked = set()
 
+        # Step 1: Schema-based identification (SSOT, highest priority)
         for col_spec in schema:
             col_name = col_spec.get("name", "").lower()
-
-            # Only respect explicit sensitive flag from schema
-            # Do NOT use pattern matching - schema is SSOT
             if col_spec.get("sensitive", False):
                 sensitive.add(col_name)
+                schema_marked.add(col_name)
 
-        logger.debug(f"Identified {len(sensitive)} sensitive columns from schema: {sensitive}")
+        # Step 2: Pattern-based identification (defense-in-depth)
+        # Check actual columns against known sensitive patterns
+        if actual_columns:
+            pattern_matched = set()
+            
+            for col_name in actual_columns:
+                col_lower = col_name.lower()
+                
+                # Check against all sensitive patterns
+                for pattern_category, pattern_list in cls.SENSITIVE_PATTERNS.items():
+                    for pattern in pattern_list:
+                        pattern_lower = pattern.lower()
+                        
+                        # Exact match or word boundary match to avoid false positives
+                        # e.g., "user_name" matches "user_name", not "description" matching "ip"
+                        if col_lower == pattern_lower or pattern_lower in col_lower.split('_'):
+                            pattern_matched.add(col_name)
+                            
+                            # Warning: pattern matched but not in schema
+                            if col_name not in schema_marked:
+                                logger.warning(
+                                    f"Column '{col_name}' matches sensitive pattern "
+                                    f"({pattern_category}: {pattern}) but not marked in schema. "
+                                    f"Auto-redacting as defense-in-depth."
+                                )
+                            break
+            
+            # Merge pattern-matched columns
+            sensitive.update(pattern_matched)
+
+        logger.debug(
+            f"Identified {len(sensitive)} sensitive columns: "
+            f"{len(schema_marked)} from schema, "
+            f"{len(sensitive - schema_marked)} from patterns"
+        )
+        
         return sensitive
 
     @classmethod

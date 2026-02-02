@@ -3,6 +3,7 @@ Ollama LLM Client.
 Per AGENTS.md § 7 (Ollama Prompting Rules).
 
 Connects to Ollama API, handles prompt construction, parses responses.
+Implements output validation per SECURITY.MD § 3.3.
 """
 
 import json
@@ -10,6 +11,7 @@ import logging
 from typing import Optional
 import requests
 from src.controls.schema import LLMSummaryResponse
+from src.llm.input_validator import PromptInjectionDetector
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +91,12 @@ class OllamaClient:
             if response.status_code == 200:
                 result = response.json()
                 chat_response = result.get("response", "").strip()
+                
+                # SECURITY: Output validation
+                if not PromptInjectionDetector.validate_output(chat_response, "chat"):
+                    logger.error("Chat response validation failed")
+                    return "Üzgünüm, yanıt güvenlik kontrolünden geçemedi."
+                
                 logger.info(f"✓ Chat response generated ({len(chat_response)} chars)")
                 return chat_response
             else:
@@ -106,21 +114,24 @@ class OllamaClient:
         self, system_prompt: str, context: str, user_question: str
     ) -> Optional[LLMSummaryResponse]:
         """
-        Call Ollama to summarize DB results.
+        Call Ollama to summarize DB results with security markers.
 
         Args:
             system_prompt: System policy + behavior constraints
             context: Control metadata + DB results (sanitized)
-            user_question: Original user prompt
+            user_question: Original user prompt (already sanitized)
 
         Returns:
             LLMSummaryResponse with summary, verdict, evidence, details
         """
-        # Build user prompt
-        user_prompt = f"{context}\n\n---\n\nUser Question: {user_question}"
-
-        # Build full prompt for Ollama
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        # Import here to avoid circular dependency
+        from src.llm.prompt_builder import PromptBuilder
+        
+        # Build full prompt with security markers
+        # Per SECURITY.MD § 3.2 (Context Separation)
+        full_prompt = PromptBuilder.build_full_prompt_with_markers(
+            system_prompt, context, user_question
+        )
 
         try:
             logger.debug(f"Calling Ollama: {self.model_name} ({self.timeout_seconds}s timeout)")
@@ -140,6 +151,18 @@ class OllamaClient:
             if response.status_code == 200:
                 result = response.json()
                 raw_response = result.get("response", "").strip()
+
+                # SECURITY: Output validation per SECURITY.MD § 3.3
+                if not PromptInjectionDetector.validate_output(raw_response, "summarize"):
+                    logger.error("Output validation failed: potential prompt leakage")
+                    # Return safe fallback instead of leaked content
+                    return LLMSummaryResponse(
+                        summary=["System error: Response validation failed"],
+                        verdict="UNKNOWN",
+                        evidence=[],
+                        details="",
+                        next_steps=[]
+                    )
 
                 # DEBUG: Log raw Ollama response
                 logger.debug(f"Raw Ollama response ({len(raw_response)} chars): {raw_response[:500]}...")

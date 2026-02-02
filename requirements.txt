@@ -1,6 +1,7 @@
 # Core Framework
 Flask==2.3.3
 Flask-CORS==4.0.0
+Flask-Limiter==3.5.0
 Werkzeug==2.3.7
 
 # Database (Oracle EBS R12)

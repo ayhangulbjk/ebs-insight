@@ -3,6 +3,7 @@ Prompt Builder for Ollama.
 Per AGENTS.md § 7 (Ollama Prompting Rules).
 
 Constructs system + context + user prompts from control metadata + DB results.
+Implements context separation markers per SECURITY.MD § 3.2.
 """
 
 import logging
@@ -141,12 +142,49 @@ Output Format:
     @staticmethod
     def build_user_prompt(original_prompt: str) -> str:
         """
-        Build user question for context.
+        Build user question for context with separation markers.
+        
+        Per SECURITY.MD § 3.2 (Context Separation):
+        Clearly mark boundaries to prevent prompt injection.
 
         Args:
-            original_prompt: Original user question
+            original_prompt: Original user question (already sanitized)
 
         Returns:
-            Formatted user question
+            Formatted user question with markers
         """
-        return f"Based on the above database results, answer the user's question:\n\n**User**: {original_prompt}"
+        return f"Based on the above database results, answer the user's question:\n\n--- USER QUESTION ---\n{original_prompt}\n--- END USER QUESTION ---"
+
+    @staticmethod
+    def build_full_prompt_with_markers(
+        system_prompt: str, 
+        context: str, 
+        user_question: str
+    ) -> str:
+        """
+        Build full prompt with security markers.
+        
+        Per SECURITY.MD § 3.2 (Context Separation):
+        Separate DB results and user input with explicit markers.
+        
+        Args:
+            system_prompt: System policy
+            context: Control metadata + DB results
+            user_question: User's original question (sanitized)
+            
+        Returns:
+            Full prompt with separation markers
+        """
+        parts = []
+        
+        parts.append(system_prompt)
+        parts.append("")
+        parts.append("--- START DB RESULTS ---")
+        parts.append(context)
+        parts.append("--- END DB RESULTS ---")
+        parts.append("")
+        parts.append("--- USER QUESTION ---")
+        parts.append(user_question)
+        parts.append("--- END USER QUESTION ---")
+        
+        return "\n".join(parts)

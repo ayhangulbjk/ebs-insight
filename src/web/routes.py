@@ -10,6 +10,9 @@ import json
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+from src.llm.input_validator import PromptInjectionDetector, InputValidationError
+from src.observability.log_sanitizer import safe_log_value
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,7 +62,35 @@ def register_routes(app):
                     "request_id": request_id
                 }), 400
 
-            logger.info(f"[{request_id}] Chat request: '{user_prompt[:100]}'")
+            # ===== SECURITY: Input Validation & Sanitization =====
+            # Per SECURITY.MD § 3.1 (Input Validation)
+            try:
+                sanitized_prompt, is_suspicious, warning_msg = PromptInjectionDetector.validate_and_sanitize(
+                    user_prompt, request_id
+                )
+                
+                if is_suspicious:
+                    logger.error(
+                        f"[{request_id}] INJECTION ATTEMPT FLAGGED: '{user_prompt[:100]}'"
+                    )
+                    # Log to security audit trail
+                    # In production: could block, rate-limit, or notify security team
+                    return jsonify({
+                        "error": warning_msg,
+                        "request_id": request_id,
+                        "security_flag": True
+                    }), 400
+                
+                # Use sanitized prompt from here on
+                user_prompt = sanitized_prompt
+                logger.info(f"[{request_id}] Chat request (sanitized): '{user_prompt[:100]}'")
+                
+            except InputValidationError as e:
+                logger.warning(f"[{request_id}] Input validation failed: {e}")
+                return jsonify({
+                    "error": str(e),
+                    "request_id": request_id
+                }), 400
 
             # ===== STEP 1: Intent Classification =====
             logger.debug(f"[{request_id}] STEP 1: Starting intent classification")

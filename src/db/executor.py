@@ -11,11 +11,14 @@ Enforces:
 
 import logging
 import re
+import threading
+import time
 from typing import List, Dict, Any, Optional
 import oracledb
 
 from src.db.sanitizer import Sanitizer
 from src.controls.schema import QueryExecutionResult, ControlExecutionResult
+from src.observability.log_sanitizer import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -92,13 +95,15 @@ class QueryExecutor:
         row_limit = query_definition.get("row_limit", 50)
         result_schema = query_definition.get("result_schema", [])
 
-        logger.info(f"Executing query: {query_id}")
+        # Sanitize query_id for logging (prevent log injection)
+        safe_query_id = safe_log_value(query_id, max_length=50)
+        logger.info(f"Executing query: {safe_query_id}")
 
         # Step 1: Validate SQL (security check)
         # =====================================
         validation_error = self._validate_sql(sql)
         if validation_error:
-            logger.error(f"[{query_id}] SQL validation failed: {validation_error}")
+            logger.error(f"[{safe_query_id}] SQL validation failed: {validation_error}")
             return QueryExecutionResult(
                 query_id=query_id,
                 rows=[],
@@ -110,8 +115,6 @@ class QueryExecutor:
 
         # Step 2: Execute query with timeout
         # ==================================
-        import time
-
         start_time = time.time()
         conn = None
 
@@ -125,11 +128,13 @@ class QueryExecutor:
 
             # Execute with binds (safe: oracledb handles binding)
             if binds:
-                # Validate binds
-                self._validate_binds(binds, query_definition.get("binds", []))
-                cursor.execute(sql, binds)
+                # Validate binds (returns type-converted dict)
+                validated_binds = self._validate_binds(binds, query_definition.get("binds", []))
+                # Execute with timeout enforcement
+                self._execute_with_timeout(cursor, sql, validated_binds, timeout_seconds)
             else:
-                cursor.execute(sql)
+                # Execute with timeout enforcement
+                self._execute_with_timeout(cursor, sql, None, timeout_seconds)
 
             # Step 3: Fetch results with row limit
             # ====================================
@@ -154,7 +159,7 @@ class QueryExecutor:
             sanitized = Sanitizer.sanitize_result(rows_list, result_schema)
 
             logger.info(
-                f"[{query_id}] Success: {len(rows_list)} rows in {execution_time_ms:.2f}ms"
+                f"[{safe_query_id}] Success: {len(rows_list)} rows in {execution_time_ms:.2f}ms"
             )
 
             return QueryExecutionResult(
@@ -168,7 +173,7 @@ class QueryExecutor:
 
         except oracledb.DatabaseError as e:
             execution_time_ms = (time.time() - start_time) * 1000
-            logger.error(f"[{query_id}] Database error: {e}")
+            logger.error(f"[{safe_query_id}] Database error: {e}")
             return QueryExecutionResult(
                 query_id=query_id,
                 rows=[],
@@ -180,7 +185,7 @@ class QueryExecutor:
 
         except Exception as e:
             execution_time_ms = (time.time() - start_time) * 1000
-            logger.error(f"[{query_id}] Execution error: {e}")
+            logger.error(f"[{safe_query_id}] Execution error: {e}")
             return QueryExecutionResult(
                 query_id=query_id,
                 rows=[],
@@ -212,7 +217,9 @@ class QueryExecutor:
         control_id = control_definition.control_id
         control_version = control_definition.version
 
-        logger.info(f"Executing control: {control_id} (v{control_version})")
+        # Sanitize for logging
+        safe_control_id = safe_log_value(control_id, max_length=50)
+        logger.info(f"Executing control: {safe_control_id} (v{control_version})")
 
         query_results = []
         total_time = 0.0
@@ -273,32 +280,220 @@ class QueryExecutor:
 
         return None
 
-    def _validate_binds(self, binds: Dict[str, Any], bind_schema: List[Dict]) -> None:
+    def _execute_with_timeout(
+        self, 
+        cursor, 
+        sql: str, 
+        binds: Optional[Dict[str, Any]], 
+        timeout_seconds: int
+    ) -> None:
         """
-        Validate bind parameters against schema.
+        Execute SQL with timeout enforcement (cross-platform).
+        
+        Per AGENTS.md § 6.1 (Query Execution Limits):
+        - Enforce timeout_seconds per query
+        - Cancel query if timeout exceeded
+        - Thread-based implementation (works on Windows + Unix)
+        
+        Args:
+            cursor: Oracle cursor
+            sql: SQL statement
+            binds: Bind parameters (or None)
+            timeout_seconds: Max execution time
+            
+        Raises:
+            TimeoutError: If query exceeds timeout
+            oracledb.DatabaseError: If query fails
+        """
+        exception_holder = [None]
+        
+        def execute_target():
+            """Target function for thread execution"""
+            try:
+                if binds:
+                    cursor.execute(sql, binds)
+                else:
+                    cursor.execute(sql)
+            except Exception as e:
+                exception_holder[0] = e
+        
+        # Start execution in thread
+        exec_thread = threading.Thread(target=execute_target, daemon=True)
+        exec_thread.start()
+        
+        # Wait for completion or timeout
+        exec_thread.join(timeout=timeout_seconds)
+        
+        # Check if thread is still alive (timeout occurred)
+        if exec_thread.is_alive():
+            logger.error(f"Query timeout exceeded: {timeout_seconds}s")
+            # Note: In Oracle, we can't forcefully kill a thread from Python
+            # The query will continue executing in the database
+            # Best practice: close connection to cancel server-side execution
+            try:
+                cursor.close()
+            except:
+                pass
+            
+            raise TimeoutError(
+                f"Query execution exceeded timeout of {timeout_seconds} seconds. "
+                f"Connection closed to cancel server-side execution."
+            )
+        
+        # Check if execution raised an exception
+        if exception_holder[0]:
+            raise exception_holder[0]
+        
+        logger.debug(f"Query executed successfully within {timeout_seconds}s timeout")
+
+    def _validate_binds(self, binds: Dict[str, Any], bind_schema: List[Dict]) -> Dict[str, Any]:
+        """
+        Validate bind parameters against schema with type checking.
         
         Per AGENTS.md § 6.1 (Parameter Binding):
-        Ensures bind values match expected types from schema
+        - Ensures bind values match expected types from schema
+        - Rejects unexpected bind parameters (strict mode)
+        - Performs safe type conversion where appropriate
         
         Args:
             binds: Actual bind values
-            bind_schema: Expected bind schema
+            bind_schema: Expected bind schema from control definition
+                        [{"name": str, "type": str, "optional": bool}, ...]
+            
+        Returns:
+            Dict[str, Any]: Validated and type-converted bind values
             
         Raises:
             QueryExecutionError: If validation fails
         """
+        if not binds:
+            binds = {}
+        
         expected_names = {b.get("name") for b in bind_schema}
+        validated_binds = {}
 
+        # Step 1: Reject unexpected bind parameters (security: prevent injection vectors)
         for bind_name in binds.keys():
             if bind_name not in expected_names:
-                logger.warning(f"Unexpected bind parameter: {bind_name}")
+                raise QueryExecutionError(
+                    f"Unexpected bind parameter '{bind_name}'. "
+                    f"Only {expected_names} are allowed per control schema."
+                )
 
-        # Validate non-optional binds are present
+        # Step 2: Validate required binds are present + type check
         for bind_spec in bind_schema:
             bind_name = bind_spec.get("name")
+            bind_type = bind_spec.get("type", "str")  # default: string
             is_optional = bind_spec.get("optional", False)
 
-            if not is_optional and bind_name not in binds:
+            # Check presence
+            if bind_name not in binds:
+                if not is_optional:
+                    raise QueryExecutionError(
+                        f"Required bind parameter missing: '{bind_name}'"
+                    )
+                continue  # Skip validation for missing optional params
+
+            # Get value
+            bind_value = binds[bind_name]
+
+            # Step 3: Type validation + safe conversion
+            try:
+                validated_value = self._convert_bind_type(bind_value, bind_type, bind_name)
+                validated_binds[bind_name] = validated_value
+            except (ValueError, TypeError) as e:
                 raise QueryExecutionError(
-                    f"Required bind parameter missing: {bind_name}"
+                    f"Bind parameter '{bind_name}' type mismatch. "
+                    f"Expected {bind_type}, got {type(bind_value).__name__}: {e}"
                 )
+
+        return validated_binds
+
+    def _convert_bind_type(self, value: Any, expected_type: str, param_name: str) -> Any:
+        """
+        Convert bind value to expected type with validation.
+        
+        Supported types:
+        - str, int, float, bool
+        - date, datetime (ISO format strings)
+        
+        Args:
+            value: Bind value to convert
+            expected_type: Expected type name (from schema)
+            param_name: Parameter name (for error messages)
+            
+        Returns:
+            Converted value
+            
+        Raises:
+            ValueError: If conversion fails
+        """
+        if value is None:
+            return None
+
+        # Already correct type
+        if expected_type == "str" and isinstance(value, str):
+            return value
+        elif expected_type == "int" and isinstance(value, int):
+            return value
+        elif expected_type == "float" and isinstance(value, (int, float)):
+            return float(value)
+        elif expected_type == "bool" and isinstance(value, bool):
+            return value
+
+        # Safe conversion attempts
+        if expected_type == "str":
+            return str(value)
+        
+        elif expected_type == "int":
+            # Accept numeric strings
+            if isinstance(value, str):
+                return int(value)  # raises ValueError if not numeric
+            elif isinstance(value, (int, float)):
+                return int(value)
+            else:
+                raise ValueError(f"Cannot convert {type(value).__name__} to int")
+        
+        elif expected_type == "float":
+            if isinstance(value, str):
+                return float(value)
+            elif isinstance(value, (int, float)):
+                return float(value)
+            else:
+                raise ValueError(f"Cannot convert {type(value).__name__} to float")
+        
+        elif expected_type == "bool":
+            if isinstance(value, str):
+                # Accept: "true"/"false", "1"/"0", "yes"/"no"
+                lower = value.lower()
+                if lower in ("true", "1", "yes"):
+                    return True
+                elif lower in ("false", "0", "no"):
+                    return False
+                else:
+                    raise ValueError(f"Cannot convert '{value}' to bool")
+            elif isinstance(value, (int, float)):
+                return bool(value)
+            else:
+                raise ValueError(f"Cannot convert {type(value).__name__} to bool")
+        
+        elif expected_type in ("date", "datetime"):
+            # Accept ISO format strings, convert to string for Oracle binding
+            # oracledb will handle the conversion to Oracle DATE type
+            if isinstance(value, str):
+                # Validate ISO format (basic check)
+                import re
+                if expected_type == "date":
+                    if not re.match(r'\d{4}-\d{2}-\d{2}', value):
+                        raise ValueError(f"Invalid date format: {value}. Expected YYYY-MM-DD")
+                else:  # datetime
+                    if not re.match(r'\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}', value):
+                        raise ValueError(f"Invalid datetime format: {value}. Expected YYYY-MM-DD HH:MM:SS")
+                return value
+            else:
+                raise ValueError(f"Date/datetime must be ISO format string, got {type(value).__name__}")
+        
+        else:
+            # Unknown type: pass through (log warning)
+            logger.warning(f"Unknown bind type '{expected_type}' for param '{param_name}', passing through as-is")
+            return value
