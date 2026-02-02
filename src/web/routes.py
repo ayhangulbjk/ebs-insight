@@ -465,26 +465,32 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
             # Extract object names from first query result
             if exec_result.query_results and exec_result.query_results[0].rows:
                 sample_objects = []
-                for row in exec_result.query_results[0].rows[:10]:
-                    owner = row.get('OWNER') or ''
-                    obj = row.get('OBJECT_NAME') or ''
+                for idx, row in enumerate(exec_result.query_results[0].rows[:10]):
+                    # Try multiple column name variations (case-insensitive)
+                    owner = (row.get('OWNER') or row.get('owner') or 
+                            row.get('Owner') or '').strip()
+                    obj = (row.get('OBJECT_NAME') or row.get('object_name') or 
+                          row.get('Object_Name') or '').strip()
+                    obj_type = (row.get('OBJECT_TYPE') or row.get('object_type') or 
+                               row.get('Object_Type') or '').strip()
                     
-                    # Build object name safely
-                    if owner and obj:
-                        obj_name = f"{owner}.{obj}"
-                    elif obj:
-                        obj_name = obj
-                    elif owner:
-                        obj_name = owner
-                    else:
-                        continue  # Skip rows without meaningful data
-                    
-                    sample_objects.append(obj_name)
+                    # Build display name
+                    if obj:
+                        if obj_type:
+                            display_name = f"{obj} ({obj_type})"
+                        else:
+                            display_name = obj
+                        sample_objects.append(display_name)
                 
                 if sample_objects:
-                    bullets.append(f"İlk {len(sample_objects)} obje: {', '.join(sample_objects)}")
-                    if total_rows > len(sample_objects):
-                        bullets.append(f"(Toplam {total_rows} objeden {len(sample_objects)} tanesi gösteriliyor)")
+                    # Show objects in a clean list format
+                    objects_str = ", ".join(sample_objects[:5])  # First 5 for readability
+                    if len(sample_objects) > 5:
+                        objects_str += f" ... (+{len(sample_objects)-5} diğer)"
+                    bullets.append(f"📋 Örnek objeler: {objects_str}")
+                else:
+                    # Fallback if extraction fails
+                    bullets.append("⚠️ Obje detayları alınamadı (veri formatı beklenenden farklı)")
             
             verdict = LLMOutputVerdictType.WARN if total_rows < 50 else LLMOutputVerdictType.CRIT
             evidence = [
@@ -502,11 +508,12 @@ def _generate_fallback_summary(exec_result, control: 'ControlDefinition' = None)
             verdict = LLMOutputVerdictType.UNKNOWN
             evidence = [f"Total rows: {total_rows}"]
     
-    if any_truncated:
-        bullets.append(f"⚠️ Bazı sonuçlar {Sanitizer.MAX_ROWS} satır limitinden dolayı kısaltıldı.")
+    # Show truncation info if applicable
+    if any_truncated and displayed_rows < total_rows:
+        bullets.append(f"ℹ️ Not: Sonuçlar güvenlik limiti nedeniyle {displayed_rows} satıra kısaltıldı (toplam: {total_rows})")
     
     # Add fallback notice
-    details = "ℹ️ Ollama özetleme başarısız oldu. Yukarıdaki özet doğrudan veritabanı sonuçlarından oluşturulmuştur."
+    details = "ℹ️ Not: Ollama zaman aşımına uğradı. Bu özet doğrudan veritabanı sonuçlarından oluşturulmuştur."
     
     next_checks = []
     if control and total_rows > 0:
@@ -535,11 +542,7 @@ def _format_response(summary_response, request_id: str = None) -> str:
     """
     lines = []
 
-    # Request ID if provided (debug mode only)
-    if request_id:
-        lines.append(f"_Request ID: {request_id}_\n")
-
-    # Verdict as emoji + Turkish label
+    # Verdict as emoji + Turkish label (no Request ID - already in JSON response)
     verdict_display = {
         "OK": ("✓", "Normal"),
         "WARN": ("⚠️", "Dikkat Gerekli"),
@@ -551,31 +554,30 @@ def _format_response(summary_response, request_id: str = None) -> str:
     verdict_key = summary_response.verdict.value if hasattr(summary_response.verdict, 'value') else str(summary_response.verdict)
     emoji, label = verdict_display.get(verdict_key, ("❓", "Bilinmeyen"))
 
-    lines.append(f"### {emoji} Durum: {label}\n")
+    # Simple header - UI already displays verdict field separately
+    lines.append(f"**{emoji} {label}**\n")
 
     # Summary bullets
     for bullet in summary_response.summary_bullets:
         lines.append(f"- {bullet}")
 
-    lines.append("")
-
-    # Evidence
+    # Evidence (compact, no extra line before)
     if summary_response.evidence:
-        lines.append("**📊 Kanıtlar:**")
-        for evidence in summary_response.evidence:
-            lines.append(f"- {evidence}")
         lines.append("")
+        lines.append("**Teknik Detaylar:**")
+        for evidence in summary_response.evidence:
+            lines.append(f"  • {evidence}")
 
     # Details if present
     if summary_response.details:
-        lines.append("**📝 Detaylar:**")
-        lines.append(summary_response.details)
         lines.append("")
+        lines.append(summary_response.details)
     
     # Next steps if present
     if summary_response.next_checks:
-        lines.append("**🔧 Önerilen Sonraki Adımlar:**")
+        lines.append("")
+        lines.append("**Önerilen Aksiyonlar:**")
         for step in summary_response.next_checks:
-            lines.append(f"- {step}")
+            lines.append(f"  ✓ {step}")
     
     return "\n".join(lines)
